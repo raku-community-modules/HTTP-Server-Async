@@ -55,15 +55,17 @@ class HTTP::Server::Async {
 
     #detect end of req
     if so %headers<Transfer-Encoding>:exists && %headers<Transfer-Encoding> eq 'chunked' {
-      my $i   = 0;
-      my $tr  = 0;
-      $r.data = '';
-      while $i < $bodystr.chars && ($tr = :16($bodystr.substr($i, $bodystr.index("\r", $i) - $i))) != 0 {
-        $i += $bodystr.index("\r", $i) - $i + 2;
-        $r.data ~= $bodystr.substr($i, $tr);
-        $i      += $tr + 2;
-      }
-      return 1 if $tr == 0; 
+      try {
+        my $i   = 0;
+        my $tr  = 0;
+        $r.data = '';
+        while $i < $bodystr.chars && ($tr = :16($bodystr.substr($i, $bodystr.index("\r", $i) - $i))) != 0 {
+          $i += $bodystr.index("\r", $i) - $i + 2;
+          $r.data ~= $bodystr.substr($i, $tr);
+          $i      += $tr + 2;
+        }
+        return 1 if $tr == 0; 
+      };
       return 0;
 
     } else {
