@@ -9,11 +9,13 @@ $s.register(sub ($request, $response) {
   $response.headers<Content-Type> = 'text/plain';
   $response.status = 200;
   $response.write("write 1\n");
-  start {
-    sleep 3;
-    $response.close("poop\n{$request.method}|{$request.version}|{$request.uri}\n{$request.data}");
-  };
+#  $response.close("poop\n{$request.method}|{$request.version}|{$request.uri}\n{$request.data}");
   return True;
+});
+
+$s.register(sub ($request, $response) {
+  'killer'.say;
+  $response.close;
 });
 
 $s.listen;

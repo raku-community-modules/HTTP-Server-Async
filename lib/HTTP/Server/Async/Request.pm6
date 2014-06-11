@@ -14,7 +14,7 @@ class HTTP::Server::Async::Request {
     
     for @headera {
       my ($k,$v) = "$_".split(':',2);
-      %headers{$k.trim} = $v.trim; 
+      %headers{$k.trim} = Any !~~ $v.WHAT ?? $v.trim !! ''; 
     }
     $.method  = @method.shift;
     $.version = @method.pop;

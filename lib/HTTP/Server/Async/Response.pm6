@@ -17,6 +17,7 @@ class HTTP::Server::Async::Response {
   }
 
   method write($data) {
+    return if $data !~~ Str;
     self!sendheaders;   
     @!buffer.push($data) if $.buffered;
     $.connection.write($data) if $data.WHAT !~~ Str && !$.buffered;
@@ -25,17 +26,19 @@ class HTTP::Server::Async::Response {
   }
 
   method close($data?) {
-    try {
-      $.write($data);
-      self!sendheaders(True) if $.buffered;
-      $.connection.write(@!buffer.join('')) if $.buffered && !$!str;
-      $.connection.send(@!buffer.join(''))  if $.buffered && $!str;
-      CATCH {
-        default {
-          $_.perl.say;
-        }
+    if Any ~~ $data.WHAT {
+      try {
+        $.write($data);
+        self!sendheaders(True) if $.buffered;
+        $.connection.write(@!buffer.join('')) if $.buffered && !$!str;
+        $.connection.send(@!buffer.join(''))  if $.buffered && $!str;
+        CATCH {
+          default {
+            $_.perl.say;
+          }
+        };
       };
-    };
+    }
     try {
       $.connection.close;
       return True;
