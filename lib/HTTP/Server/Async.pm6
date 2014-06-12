@@ -31,7 +31,7 @@ class HTTP::Server::Async {
   method !respond($c, $request) {
     for @.responsestack -> $sub {
       try {
-        $c.close if so $sub.($c, $request);
+        $c.close, last if so $sub.($c, $request);
       };
     }
     try {
