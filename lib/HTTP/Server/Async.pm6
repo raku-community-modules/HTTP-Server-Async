@@ -4,10 +4,10 @@ use HTTP::Server::Async::Request;
 use HTTP::Server::Async::Response;
 
 class HTTP::Server::Async {
-  has $.host       = '127.0.0.1';
-  has $.port       = 8080;
-  has $.debug      = 1;
-  has $.buffermode = 0;
+  has $.host          = '127.0.0.1';
+  has $.port          = 8080;
+  has $.debug         = 1;
+  has Bool $.buffered = True;
 
   has @.responsestack;
 
@@ -16,7 +16,7 @@ class HTTP::Server::Async {
     IO::Socket::Async.listen($.host,$.port,).tap(-> $connection {
       my $data     = '';
       my $request  = HTTP::Server::Async::Request.new;
-      my $response = HTTP::Server::Async::Response.new(:$connection); 
+      my $response = HTTP::Server::Async::Response.new(:$connection, :$.buffered); 
       $connection.chars_supply.tap({ 
         $data ~= $_;
         self!respond($request, $response) if $request.parse($data):so;

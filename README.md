@@ -30,6 +30,12 @@ $s.listen;
 ```
 
 ##Methods
+
+###.new
+`:port` - port to listen on
+`:host` - ip to listen on
+`:buffered` - Boolean value for whether responses should be buffered or not
+
 ###.register ( Callable )
 Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should return `True` if the server should discontinue processing the request and return `False` if the message was not completely handled. 
 
