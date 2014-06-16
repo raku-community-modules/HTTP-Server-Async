@@ -13,7 +13,8 @@ class HTTP::Server::Async {
 
   method listen() {
     my $num = 0;
-    IO::Socket::Async.listen($.host,$.port,).tap(-> $connection {
+    my $con = IO::Socket::Async.listen($.host,$.port,) or die "Couldn't listen on port: $.port";
+    $con.tap(-> $connection {
       my $data     = '';
       my $request  = HTTP::Server::Async::Request.new;
       my $response = HTTP::Server::Async::Response.new(:$connection, :$.buffered); 
