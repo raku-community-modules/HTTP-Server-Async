@@ -37,24 +37,24 @@ $s.listen;
 `:buffered` - Boolean value for whether responses should be buffered or not
 
 ###.register ( Callable )
-Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should return `True` if the server should discontinue processing the request and return `False` if the message was not completely handled. 
+Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should return `True` if the server should discontinue processing the request and return `False` if the message was not completely handled 
 
-Callable will receive two parameters from the server, a `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response`.  More about these below.
+Callable will receive two parameters from the server, a `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response`.  More about these below
 
 ###.listen 
-Starts the server and does *not* block ..
+Starts the server and does *not* block 
 
 ###.block
 Will block the main loop until the server stops 
 
 ##HTTP::Server::Async::Request
 
-This handles the parsing of the incoming request.
+This handles the parsing of the incoming request
 
 ###Attributes
 
 ####$.method 
-GET/PUT/POST/etc.
+GET/PUT/POST/etc
 
 ####%.headers
 Key/value pair containing the header values
@@ -70,7 +70,7 @@ String containing the data included with the request
 
 ##HTTP::Server::Async::Response
 
-Response object, handles writing and closing the socket.
+Response object, handles writing and closing the socket
 
 ###Attributes
 
@@ -81,7 +81,7 @@ Whether or not the response object should buffer the response and write on close
 Set the status of the response, uses HTTP status codes.  See [here](http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html) for more info
 
 ####%.headers
-Response headers to be sent, accessed directly.  Modifying these after writing to the socket will have no effect on the response unless the `$.buffered` is set to True.
+Response headers to be sent, accessed directly.  Modifying these after writing to the socket will have no effect on the response unless the `$.buffered` is set to True
 
 ###Methods
 
@@ -89,6 +89,6 @@ Response headers to be sent, accessed directly.  Modifying these after writing t
 Write data to the sucket, will call the appropriate method for the socket (Str = $connection.write, anything else is $connection.send)
 
 ####close
-Close takes optional parameter of data to send out.  Will call `write` if a parameter is provided.  Closes the socket, writes headers if the response is buffered, etc. 
+Close takes optional parameter of data to send out.  Will call `write` if a parameter is provided.  Closes the socket, writes headers if the response is buffered, etc 
 
 
