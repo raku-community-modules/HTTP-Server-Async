@@ -29,11 +29,14 @@ $s.register(sub ($request, $response) {
 $s.listen;
 ```
 
-##Functions
-###$server.register ( Callable )
+##Methods
+###.register ( Callable )
 Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should return `True` if the server should discontinue processing the request and return `False` if the message was not completely handled. 
 
 Callable will receive two parameters from the server, a `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response`.  More about these below.
+
+###.listen 
+Starts the server and does *not* block ..
 
 ##HTTP::Server::Async::Request
 
