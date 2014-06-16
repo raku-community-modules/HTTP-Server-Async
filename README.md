@@ -44,6 +44,9 @@ Callable will receive two parameters from the server, a `HTTP::Server::Async::Re
 ###.listen 
 Starts the server and does *not* block ..
 
+###.block
+Will block the main loop until the server stops 
+
 ##HTTP::Server::Async::Request
 
 This handles the parsing of the incoming request.

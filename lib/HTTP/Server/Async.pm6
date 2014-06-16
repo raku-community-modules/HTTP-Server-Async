@@ -8,13 +8,15 @@ class HTTP::Server::Async {
   has $.port          = 8080;
   has $.debug         = 1;
   has Bool $.buffered = True;
-
+  has $!prom;
+  has $!conn;
   has @.responsestack;
 
   method listen() {
     my $num = 0;
-    my $con = IO::Socket::Async.listen($.host,$.port,) or die "Couldn't listen on port: $.port";
-    $con.tap(-> $connection {
+    $!prom  = Promise.new;
+    $!conn  = IO::Socket::Async.listen($.host,$.port,) or die "Couldn't listen on port: $.port";
+    $!conn.tap(-> $connection {
       my $data     = '';
       my $request  = HTTP::Server::Async::Request.new;
       my $response = HTTP::Server::Async::Response.new(:$connection, :$.buffered); 
@@ -22,7 +24,14 @@ class HTTP::Server::Async {
         $data ~= $_;
         self!respond($request, $response) if $request.parse($data):so;
       });
+    }, quit => {
+      $!prom.keep(1);
+      "closed".say; 
     });
+  }
+
+  method block {
+    await $!prom;
   }
 
   method register(Callable $sub) {
