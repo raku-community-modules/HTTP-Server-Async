@@ -37,9 +37,11 @@ $s.listen;
 `:buffered` - Boolean value for whether responses should be buffered or not
 
 ###.register ( Callable )
-Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should return `True` if the server should discontinue processing the request and return `False` if the message was not completely handled 
+Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should return `True` if the server should discontinue processing the request and return `False` if the message was not completely handled.
 
 Callable will receive two parameters from the server, a `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response`.  More about these below
+
+Note that the server will wait for a complete request from the client prior to calling any of the methods registered with the server 
 
 ###.listen 
 Starts the server and does *not* block 
