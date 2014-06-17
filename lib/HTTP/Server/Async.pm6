@@ -45,26 +45,28 @@ class HTTP::Server::Async {
   }
 
   method !respond($req, $res) {
-    my $promise;
+    my $*promise;
     my $n = sub {
       try {
-        $promise.keep(True);
+        $*promise.keep(True);
         CATCH { default { say $!; say $_; }; };
       };
     };
     my $psub;
     for @.responsestack -> $sub {
       try {
-        $promise = Promise.new;
+        $*promise = Promise.new;
         $psub = $sub.($req, $res, $n);
-        await Promise.anyof($promise, $res.promise);
+        await Promise.anyof($*promise, $res.promise);
         last if $res.promise.status == Kept;
       };
     }
-    #await $psub;
+
     try {
       $res.close if $res.promise.status != Kept;
     };
+    $*promise.keep(0) if $*promise.status == Planned;
+    await Promise.allof($*promise, $res.promise, $psub);
   }
 
 };
