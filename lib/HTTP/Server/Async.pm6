@@ -26,7 +26,6 @@ class HTTP::Server::Async {
       });
     }, quit => {
       $!prom.keep(1);
-      "closed".say; 
     });
   }
 
@@ -35,17 +34,36 @@ class HTTP::Server::Async {
   }
 
   method register(Callable $sub) {
-    @.responsestack.push($sub);
+    @.responsestack.push(sub ($a, $b, $c) { 
+      my $promise = Promise.new; 
+      start { 
+        $sub.($a,$b,$c);  
+        $promise.keep(1);  
+      }; 
+      return Promise.new; 
+    });
   }
 
-  method !respond($c, $request) {
+  method !respond($req, $res) {
+    my $promise;
+    my $n = sub {
+      try {
+        $promise.keep(True);
+        CATCH { default { say $!; say $_; }; };
+      };
+    };
+    my $psub;
     for @.responsestack -> $sub {
       try {
-        $c.close, last if so $sub.($c, $request);
+        $promise = Promise.new;
+        $psub = $sub.($req, $res, $n);
+        await Promise.anyof($promise, $res.promise);
+        last if $res.promise.status == Kept;
       };
     }
+    #await $psub;
     try {
-      $c.close;
+      $res.close if $res.promise.status != Kept;
     };
   }
 

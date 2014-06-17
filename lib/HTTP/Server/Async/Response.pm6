@@ -3,6 +3,7 @@ class HTTP::Server::Async::Response {
   has Bool $.buffered = True;
   has Bool $!str      = True;
   has Bool $!senthead = False;
+  has $.promise = Promise.new;
   has %.headers is rw = qw«Content-Type text/html»;
   has @!buffer;
   has $.connection;
@@ -12,16 +13,18 @@ class HTTP::Server::Async::Response {
     $!senthead = True;
     my @pairs = map { "$_: {%.headers{$_}}" }, %.headers.keys;
     @pairs.push("Content-Length: {@!buffer.join('').chars}");
-    $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
-    $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
+    'sendhead'.say;
+    await $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
+    await $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
   }
 
   method write($data) {
     return if $data !~~ Str;
     self!sendheaders;   
     @!buffer.push($data) if $.buffered;
-    $.connection.write($data) if $data.WHAT !~~ Str && !$.buffered;
-    $.connection.send($data)  if $data.WHAT  ~~ Str && !$.buffered;
+    'write'.say if !$.buffered;
+    await $.connection.write($data) if $data.WHAT !~~ Str && !$.buffered;
+    await $.connection.send($data)  if $data.WHAT  ~~ Str && !$.buffered;
     $!str = False if $data.WHAT !~~ Str;
   }
 
@@ -35,14 +38,18 @@ class HTTP::Server::Async::Response {
       self!sendheaders(True) if $.buffered;
     };
     try {
-      $.connection.write(@!buffer.join('')) if $.buffered && !$!str;
-      $.connection.send(@!buffer.join(''))  if $.buffered && $!str;
+      'write'.say if $.buffered;
+      if $.buffered {
+        await $.connection.send(@!buffer.join(''));
+      }
     };
     try {
+      'close'.say;
       $.connection.close;
-      return True;
     };
-    return False;
+    'promise keeper'.say;
+    $.promise.keep(True);
+    return;
   }
 
 

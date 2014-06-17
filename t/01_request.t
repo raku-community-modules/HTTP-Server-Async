@@ -9,12 +9,18 @@ my $s = HTTP::Server::Async.new;
 isa_ok $s, HTTP::Server::Async;
 is $s.responsestack.elems, 0, 'Response stack contains no elements yet';
 
-$s.register(sub ($request, $response) {
+$s.register(sub ($req,$res,$n) {
+  start {
+    sleep 2;
+    $n.();
+  };
+});
+
+$s.register(sub ($request, $response, $n) {
   $response.headers<Content-Type> = 'text/plain';
   $response.status = 200;
   $response.write("");
   $response.close("Hello world!");
-  return True;
 });
 ok $s.responsestack.elems, 'Response stack contains elements';
 isa_ok $s.responsestack[0], Sub;

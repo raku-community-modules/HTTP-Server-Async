@@ -18,12 +18,11 @@ use HTTP::Server::Async;
 
 my $s = HTTP::Server::Async.new;
 
-$s.register(sub ($request, $response) {
+$s.register(sub ($request, $response, $next) {
   $response.headers<Content-Type> = 'text/plain';
   $response.status = 200;
   $response.send("Hello ");
   $response.close("world!");
-  return True;
 });
 
 $s.listen;
@@ -39,9 +38,11 @@ $s.listen;
 ###.register ( Callable )
 Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should return `True` if the server should discontinue processing the request and return `False` if the message was not completely handled.
 
-Callable will receive two parameters from the server, a `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response`.  More about these below
+Callable will receive three parameters from the server, a `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response` and a `Callable`.  More about the `Response` and `Request` object below.
 
-Note that the server will wait for a complete request from the client prior to calling any of the methods registered with the server 
+If the `Callable` parameter is not called by the `sub` and the response is closed then the next callable is not called (and that request is then completed, it is not left waiting for `Callable`).   
+
+Note that the server will *NOT* wait for the request body to be complete before calling registered subs.
 
 ###.listen 
 Starts the server and does *not* block 
