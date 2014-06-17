@@ -37,10 +37,10 @@ class HTTP::Server::Async {
     @.responsestack.push(sub ($a, $b, $c) { 
       my $promise = Promise.new; 
       start { 
-        $sub.($a,$b,$c);  
+        try { $sub.($a,$b,$c); }; 
         $promise.keep(1);  
       }; 
-      return Promise.new; 
+      return $promise; 
     });
   }
 
