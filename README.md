@@ -21,7 +21,7 @@ my $s = HTTP::Server::Async.new;
 $s.register(sub ($request, $response, $next) {
   $response.headers<Content-Type> = 'text/plain';
   $response.status = 200;
-  $response.send("Hello ");
+  $response.write("Hello ");
   $response.close("world!");
 });
 
