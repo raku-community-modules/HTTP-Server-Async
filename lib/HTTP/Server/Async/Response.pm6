@@ -13,15 +13,10 @@ class HTTP::Server::Async::Response {
     $!senthead = True;
     my @pairs = map { "$_: {%.headers{$_}}" }, %.headers.keys;
     @pairs.push("Content-Length: {@!buffer.join('').chars}");
-    "first {$.connection.perl}".say;
     my $promise = $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
-    $promise.perl.say;
-    "first {$promise.status}".say;
     await $promise;
     $promise = $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
-    "second {$promise.status}".say;
     await $promise;
-    '/sendhead'.say;
   }
 
   method write($data) {
@@ -47,16 +42,13 @@ class HTTP::Server::Async::Response {
       self!sendheaders(True) if $.buffered;
     };
     try {
-      'write'.say if $.buffered;
       if $.buffered {
         await $.connection.send(@!buffer.join(''));
       }
     };
     try {
-      'close'.say;
       $.connection.close;
     };
-    'promise keeper'.say;
     $.promise.keep(True);
     return;
   }
