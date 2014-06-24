@@ -5,15 +5,24 @@ use HTTP::Server::Async;
 
 my $s = HTTP::Server::Async.new;
 my $d = -1;
+
+$*SCHEDULER = ThreadPoolScheduler.new(:maxthreads(600));
+
+$*SCHEDULER.uncaught_handler = sub ($e) {
+  $e.say;
+  $e.resume;
+};
+$*SCHEDULER.cue: { "load: {$*SCHEDULER.loads}".say; }, :every(1);
+
 $s.register(sub ($req, $res, $next) {
   my $j = $d++ + 1;
-  "here $j".say;
   $res.headers<Content-Type> = 'text/plain';
   $res.status = 200;
   $res.write("Hello ");
   $res.close("world!");
-  "end $d".say;
+  "end $j".say;
 });
 
 $s.listen;
-sleep 500;
+'listen'.say;
+$s.block;

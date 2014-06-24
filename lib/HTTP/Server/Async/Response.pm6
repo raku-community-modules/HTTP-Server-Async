@@ -13,19 +13,28 @@ class HTTP::Server::Async::Response {
     $!senthead = True;
     my @pairs = map { "$_: {%.headers{$_}}" }, %.headers.keys;
     @pairs.push("Content-Length: {@!buffer.join('').chars}");
-    'sendhead'.say;
-    await $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
-    await $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
+    "first {$.connection.perl}".say;
+    my $promise = $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
+    $promise.perl.say;
+    "first {$promise.status}".say;
+    await $promise;
+    $promise = $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
+    "second {$promise.status}".say;
+    await $promise;
+    '/sendhead'.say;
   }
 
   method write($data) {
     return if $data !~~ Str;
-    self!sendheaders;   
-    @!buffer.push($data) if $.buffered;
-    'write'.say if !$.buffered;
-    await $.connection.write($data) if $data.WHAT !~~ Str && !$.buffered;
-    await $.connection.send($data)  if $data.WHAT  ~~ Str && !$.buffered;
-    $!str = False if $data.WHAT !~~ Str;
+    try {
+      self!sendheaders;   
+    };
+    try { 
+      @!buffer.push($data) if $.buffered;
+      await $.connection.write($data) if $data.WHAT !~~ Str && !$.buffered;
+      await $.connection.send($data)  if $data.WHAT  ~~ Str && !$.buffered;
+      $!str = False if $data.WHAT !~~ Str;
+    };
   }
 
   method close($data?) {

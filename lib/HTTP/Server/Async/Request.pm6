@@ -31,7 +31,7 @@ class HTTP::Server::Async::Request {
 
       #detect end of req
       try { 
-        if so %headers<Transfer-Encoding>:exists && %headers<Transfer-Encoding> eq 'chunked' {
+        if $bodystr ~~ Str && so %headers<Transfer-Encoding>:exists && %headers<Transfer-Encoding> eq 'chunked' {
           try {
             my $i   = 0;
             my $tr  = 0;
@@ -43,12 +43,12 @@ class HTTP::Server::Async::Request {
             }
             $!requestcomplete = True if $tr == 0;
           };
-          $.promise.keep(1);
+          $.promise.vow.keep(1);
           return False;
 
-        } else {
+        } elsif $bodystr ~~ Str {
           $.data ~= $bodystr;
-          $.promise.keep(1);
+          $.promise.vow.keep(1);
           $!requestcomplete = True;
         }
       };
