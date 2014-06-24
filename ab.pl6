@@ -6,7 +6,7 @@ use HTTP::Server::Async;
 my $s = HTTP::Server::Async.new;
 my $d = -1;
 
-$*SCHEDULER = ThreadPoolScheduler.new(:maxthreads(600));
+$*SCHEDULER = ThreadPoolScheduler.new;
 
 $*SCHEDULER.uncaught_handler = sub ($e) {
   $e.say;

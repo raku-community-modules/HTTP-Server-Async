@@ -10,13 +10,16 @@ class HTTP::Server::Async::Response {
 
   method !sendheaders (Bool $lastcall? = False) {
     return if $!senthead || (!$lastcall && $.buffered);
-    $!senthead = True;
-    my @pairs = map { "$_: {%.headers{$_}}" }, %.headers.keys;
-    @pairs.push("Content-Length: {@!buffer.join('').chars}");
-    my $promise = $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
-    await $promise;
-    $promise = $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
-    await $promise;
+    try {
+      $!senthead = True;
+      my @pairs = map { "$_: {%.headers{$_}}" }, %.headers.keys;
+      @pairs.push("Content-Length: {@!buffer.join('').chars}");
+      my $promise = $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
+      await $promise;
+      $promise = $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
+      await $promise;
+      CATCH { default { .resume; } }
+    };
   }
 
   method write($data) {
@@ -49,7 +52,9 @@ class HTTP::Server::Async::Response {
     try {
       $.connection.close;
     };
-    $.promise.keep(True);
+    try {
+      $.promise.keep(True);
+    };
     return;
   }
 

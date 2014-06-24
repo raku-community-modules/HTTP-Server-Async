@@ -15,18 +15,22 @@ class HTTP::Server::Async::Request {
       my ($headerstr, $bodystr) = $data.split("\r\n\r\n", 2);
       my (%headers, @headera, @method);
       if !$!headercomplete {
-        @headera = $headerstr.split("\r\n");
-        return False if @headera.elems == 0;
-        @method  = "{@headera.shift}".split(' ');
-        
-        for @headera {
-          my ($k,$v) = "$_".split(':',2);
-          %headers{$k.trim} = Any !~~ $v.WHAT ?? $v.trim !! ''; 
-        }
-        $.method  = @method.shift;
-        $.version = @method.pop;
-        $.uri     = @method.join(' ');
-        $!headercomplete = True if $data.index("\r\n\r\n");
+        try {
+          @headera = $headerstr.split("\r\n");
+          return False if @headera.elems == 0;
+          @method  = "{@headera.shift}".split(' ');
+          
+          for @headera {
+            next if Any ~~ $_;
+            my ($k,$v) = "$_".split(':',2);
+            %headers{$k.trim} = Any !~~ $v.WHAT ?? $v.trim !! ''; 
+          }
+          $.method  = @method.shift;
+          $.version = @method.pop;
+          $.uri     = @method.join(' ');
+          $!headercomplete = True if $data.index("\r\n\r\n");
+          CATCH { default { return False; } }
+        };
       }
 
       #detect end of req
