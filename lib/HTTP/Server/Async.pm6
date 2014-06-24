@@ -50,8 +50,9 @@ class HTTP::Server::Async {
 
     try {
       $res.close if $res.promise.status != Kept;
+      $promise.keep(Nil);
     };
-    ($promise, $res.promise).map(-> $p { try { $p.vow.keep(0) if $p.status == Planned; }; });
+    ($promise, $res.promise).map(-> $p { try { $p.keep(Nil); }; });
     await Promise.allof($promise, $res.promise);
   }
 
