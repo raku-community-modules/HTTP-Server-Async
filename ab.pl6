@@ -5,7 +5,7 @@ use HTTP::Server::Async;
 
 my $s = HTTP::Server::Async.new;
 
-$*SCHEDULER = ThreadPoolScheduler.new(:max_threads(1000));
+#$*SCHEDULER = ThreadPoolScheduler.new(:max_threads(1000));
 
 $s.register(sub ($req, $res, $next) {
   $res.headers<Content-Type> = 'text/plain';

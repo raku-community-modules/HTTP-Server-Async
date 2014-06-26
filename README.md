@@ -94,4 +94,8 @@ Write data to the sucket, will call the appropriate method for the socket (Str =
 ####close
 Close takes optional parameter of data to send out.  Will call `write` if a parameter is provided.  Closes the socket, writes headers if the response is buffered, etc 
 
+##Closing Credits
+
+thanks to ugexe, btyler, jnthn, and timotimo for helping figure out bugs, answer a bunch of questions, etc
+
 

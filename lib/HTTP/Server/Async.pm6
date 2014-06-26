@@ -8,23 +8,27 @@ class HTTP::Server::Async {
   has $.port          = 8080;
   has $.debug         = 1;
   has Bool $.buffered = True;
+  has $!thread_buffer = 1;
   has $!prom;
   has $!conn;
   has @.responsestack;
 
   method listen() {
-    $*SCHEDULER.thread_max.say;
     my $num = 0;
     $!prom  = Promise.new;
     $!conn  = IO::Socket::Async.listen($.host,$.port,) or die "Couldn't listen on port: $.port";
     $!conn.tap(-> $connection {
-      my $data     = '';
-      my $request  = HTTP::Server::Async::Request.new;
-      my $response = HTTP::Server::Async::Response.new(:$connection, :$.buffered); 
-      my $tap      = $connection.chars_supply.tap({ 
-        $data ~= $_;
-        self!respond($request, $response) if so $request.parse($data);
-      });
+      if $*SCHEDULER.max_threads > $*SCHEDULER.loads + $!thread_buffer {
+        my $data     = '';
+        my $request  = HTTP::Server::Async::Request.new;
+        my $response = HTTP::Server::Async::Response.new(:$connection, :$.buffered); 
+        my $tap      = $connection.chars_supply.tap({ 
+          $data ~= $_;
+          self!respond($request, $response) if so $request.parse($data);
+        });
+      } else {
+        $connection.close;
+      }
     }, quit => {
       $!prom.vow.keep(1);
     });
