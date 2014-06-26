@@ -4,7 +4,7 @@ class HTTP::Server::Async::Response {
   has Bool $!str      = True;
   has Bool $!senthead = False;
   has $.promise = Promise.new;
-  has %.headers is rw = qw«Content-Type text/html»;
+  has %.headers is rw = qw«Content-Type text/html Connection close»;
   has @!buffer;
   has $.connection;
 

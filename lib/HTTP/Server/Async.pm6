@@ -3,6 +3,8 @@
 use HTTP::Server::Async::Request;
 use HTTP::Server::Async::Response;
 
+my $*SCHEDULER = ThreadPoolScheduler.new(:max_threads(Inf));
+
 class HTTP::Server::Async {
   has $.host          = '127.0.0.1';
   has $.port          = 8080;
