@@ -8,7 +8,7 @@ class HTTP::Server::Async {
   has $.port          = 8080;
   has $.debug         = 1;
   has Bool $.buffered = True;
-  has $!thread_buffer = 1;
+  has $!thread_buffer = 3;
   has $!prom;
   has $!conn;
   has @.responsestack;
