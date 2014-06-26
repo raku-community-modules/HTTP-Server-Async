@@ -8,12 +8,6 @@ my $d = -1;
 
 $*SCHEDULER = ThreadPoolScheduler.new;
 
-$*SCHEDULER.uncaught_handler = sub ($e) {
-  $e.say;
-  $e.resume;
-};
-$*SCHEDULER.cue: { "load: {$*SCHEDULER.loads}".say; }, :every(1);
-
 $s.register(sub ($req, $res, $next) {
   my $j = $d++ + 1;
   $res.headers<Content-Type> = 'text/plain';
