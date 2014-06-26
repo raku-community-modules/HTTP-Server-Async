@@ -3,8 +3,6 @@
 use HTTP::Server::Async::Request;
 use HTTP::Server::Async::Response;
 
-my $*SCHEDULER = ThreadPoolScheduler.new(:max_threads(Inf));
-
 class HTTP::Server::Async {
   has $.host          = '127.0.0.1';
   has $.port          = 8080;
@@ -15,6 +13,7 @@ class HTTP::Server::Async {
   has @.responsestack;
 
   method listen() {
+    $*SCHEDULER.thread_max.say;
     my $num = 0;
     $!prom  = Promise.new;
     $!conn  = IO::Socket::Async.listen($.host,$.port,) or die "Couldn't listen on port: $.port";
