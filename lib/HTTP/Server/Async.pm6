@@ -23,8 +23,10 @@ class HTTP::Server::Async {
         my $request  = HTTP::Server::Async::Request.new;
         my $response = HTTP::Server::Async::Response.new(:$connection, :$.buffered); 
         my $tap      = $connection.chars_supply.tap({ 
-          $data ~= $_;
-          self!respond($request, $response) if so $request.parse($data);
+          try {
+            $data ~= $_;
+            self!respond($request, $response) if so $request.parse($data);
+          };
         });
       } else {
         $connection.close;
