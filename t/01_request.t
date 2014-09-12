@@ -43,6 +43,6 @@ while (my $str = $client.recv) {
 $client.close;
 
 is @data[0], "HTTP/1.1 200 OK\r\n", "Code: 200";
-is @data[1], "Content-Type: text/plain\r\nContent-Length: 12\r\n\r\n", "Content-type correct";
+is @data[1], "Content-Type: text/plain\r\nConnection: close\r\nContent-Length: 12\r\n\r\n", "Content-type correct";
 is @data[2], "Hello world!", "Content: Hello World!";
 
