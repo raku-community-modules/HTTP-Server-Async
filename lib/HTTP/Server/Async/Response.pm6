@@ -59,7 +59,7 @@ class HTTP::Server::Async::Response {
   }
 
 
-  has %!statuscodes = {
+  has %!statuscodes = (
     100 => 'Continue',
     101 => 'Switching Protocols',
     102 => 'Processing',
@@ -118,6 +118,6 @@ class HTTP::Server::Async::Response {
     508 => 'Loop Detected',
     510 => 'Not Extended',
     511 => 'Network Authentication Required',
-  }
+  )
 
 }
