@@ -3,6 +3,8 @@
   "version"     : "0.1.0",
   "description" : "Asynchronous Base HTTP Server",
   "author"      : "Tony ODell",
-  "depends"     : [ ],
+  "depends"     : {
+    "Pluggable" : "*" 
+  },
   "source-url"  : "git://github.com/tony-o/perl6-http-server-async.git"
 } 

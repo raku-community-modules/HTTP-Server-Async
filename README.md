@@ -22,7 +22,7 @@ $s.register(sub ($request, $response, $next) {
   $response.headers<Content-Type> = 'text/plain';
   $response.status = 200;
   $response.write("Hello ");
-  $response.close("world!");
+  $response.close("world!"); #keeps a promise in the response and ends the server handler processing
 });
 
 $s.listen;
@@ -35,12 +35,12 @@ $s.listen;
 `:host` - ip to listen on
 `:buffered` - Boolean value for whether responses should be buffered or not
 
-###.register ( Callable )
-Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should return `True` if the server should discontinue processing the request and return `False` if the message was not completely handled.
+###.register ( Callable($request, $response, $next) )
+Any Callable passed to this method is called in the order it was registered on every incoming request.  Any method/sub registered with the server should call next (```$next();```) when the server should continue processing the request or close the request to discontinue processing.
 
 Callable will receive three parameters from the server, a `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response` and a `Callable`.  More about the `Response` and `Request` object below.
 
-If the `Callable` parameter is not called by the `sub` and the response is closed then the next callable is not called (and that request is then completed, it is not left waiting for `Callable`).   
+If the `Callable` parameter is not called by the `sub` and the response is closed then the next callable is not called (and that request is then completed, it is not left waiting for `Callable`).  If the callable parameter isn't called and the request isn't closed, then the request will hang until it times out. 
 
 Note that the server will *NOT* wait for the request body to be complete before calling registered subs.
 
