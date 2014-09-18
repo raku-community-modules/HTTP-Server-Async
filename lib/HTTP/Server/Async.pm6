@@ -8,6 +8,7 @@ class HTTP::Server::Async does Pluggable {
   has $.host          = '127.0.0.1';
   has $.port          = 8080;
   has $.debug         = 1;
+  has $.timeout       = 30;
   has Bool $.buffered = True;
   has $!thread_buffer = 3;
   has @!plugins;
@@ -67,7 +68,7 @@ class HTTP::Server::Async does Pluggable {
   }
 
   method !respond($req, $res) {
-    my $timeout = Promise.in(30);
+    my $timeout = Promise.in($.timeout);
     my $exhaust = Promise.new;
     my $index = 0;
     my $s = sub (Bool $next? = True) {
@@ -77,7 +78,7 @@ class HTTP::Server::Async does Pluggable {
       }
       @.responsestack[$index++]( $req, $res, $s );
     };
-    $s(True);
+    start { $s(True); };
     await Promise.anyof($timeout, $exhaust);
 
     try {

@@ -10,17 +10,20 @@ class HTTP::Server::Async::Request {
   has $!requestcomplete = False;
   has $.promise         = Promise.new;
 
+  has $.cacheptr        = 0;
+
   method parse ($data) {
     try {
       my ($headerstr, $bodystr) = $data.split("\r\n\r\n", 2);
       my (%headers, @headera, @method);
       if !$!headercomplete {
         try {
-          @headera = $headerstr.split("\r\n");
+          @headera = $headerstr.substr($.cacheptr).split("\r\n");
           return False if @headera.elems == 0;
           @method  = "{@headera.shift}".split(' ');
           
           for @headera {
+            $.cacheptr += $_.chars + 2;
             next if Any ~~ $_;
             my ($k,$v) = "$_".split(':',2);
             %headers{$k.trim} = Any !~~ $v.WHAT ?? $v.trim !! ''; 
