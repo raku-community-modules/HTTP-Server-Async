@@ -10,35 +10,34 @@ class HTTP::Server::Async::Request {
   has $!requestcomplete = False;
   has $.promise         = Promise.new;
 
-  has $.cacheptr        = 0;
+  has $.cacheptr is rw  = 0;
 
   method parse ($data) {
     try {
       my ($headerstr, $bodystr) = $data.split("\r\n\r\n", 2);
-      my (%headers, @headera, @method);
+      my (@headera, @method);
       if !$!headercomplete {
         try {
-          @headera = $headerstr.substr($.cacheptr).split("\r\n");
+          @headera = $headerstr.split("\r\n");
           return False if @headera.elems == 0;
           @method  = "{@headera.shift}".split(' ');
           
           for @headera {
-            $.cacheptr += $_.chars + 2;
-            next if Any ~~ $_;
+            next if Str !~~ $_;
             my ($k,$v) = "$_".split(':',2);
-            %headers{$k.trim} = Any !~~ $v.WHAT ?? $v.trim !! ''; 
+            %.headers{$k.trim} = Any !~~ $v.WHAT ?? $v.trim !! ''; 
           }
           $.method  = @method.shift;
           $.version = @method.pop;
           $.uri     = @method.join(' ');
           $!headercomplete = True if $data.index("\r\n\r\n");
-          CATCH { .handled = True; return False;  }
+          CATCH { .handled = True; .resume; return False;  }
         };
       }
 
       #detect end of req
       try { 
-        if $bodystr ~~ Str && so %headers<Transfer-Encoding>:exists && %headers<Transfer-Encoding> eq 'chunked' {
+        if $bodystr ~~ Str && so %.headers<Transfer-Encoding>:exists && %.headers<Transfer-Encoding> eq 'chunked' {
           try {
             my $i   = 0;
             my $tr  = 0;
@@ -49,10 +48,9 @@ class HTTP::Server::Async::Request {
               $i     += $tr + 2;
             }
             $!requestcomplete = True if $tr == 0;
+            CATCH { .handled = True; .resume; }
           };
-          $.promise.vow.keep(1);
-          return False;
-
+          $.promise.vow.keep(1) if $!requestcomplete;
         } elsif $bodystr ~~ Str {
           $.data ~= $bodystr;
           $.promise.vow.keep(1);
