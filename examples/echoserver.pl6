@@ -4,21 +4,30 @@ use HTTP::Server::Async;
 
 my $server = HTTP::Server::Async.new;
 
-$server.register(sub ($request,$response) {
+$server.register(sub ($request,$response, $next) {
   ('[INFO] ' ~ $request.perl).say;
-  if $request.uri eq '/' {
-    $response.write($request.data);
-    $response.close;
-    return True;
+  try {
+    if $request.uri.match(/ ^ '/' [ '?' | $ ] /) {
+      '[INFO] Serving /'.say;
+      $response.write($request.uri);
+      $response.write($request.data);
+      $response.close;
+      return;
+    }
+    CATCH { .say; };
   }
-  return False;
+  'next'.say;
+  $next();
 });
 
-$server.register(sub ($request,$response) {
-  $response.status = 404;
-  $response.write('404: ' ~ $request.uri ~ ' not found.');
-  $response.close;
-  return True;
+$server.register(sub ($request,$response,$next) {
+  '[INFO] Serving <404>'.say;
+  try {
+    $response.status = 404;
+    $response.write('404: ' ~ $request.uri ~ ' not found.');
+    $response.close;
+    CATCH { .say; }
+  };
 });
 
 $server.listen;
