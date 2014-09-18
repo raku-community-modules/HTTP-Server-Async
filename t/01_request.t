@@ -3,7 +3,7 @@
 use HTTP::Server::Async;
 use Test;
 
-plan 10;
+plan 11;
 
 my $s = HTTP::Server::Async.new;
 isa_ok $s, HTTP::Server::Async;
@@ -12,7 +12,7 @@ is $s.responsestack.elems, 0, 'Response stack contains no elements yet';
 $s.register(sub ($req,$res,$n) {
   start {
     sleep 2;
-    $n.();
+    $n();
   };
 });
 
@@ -36,13 +36,14 @@ is $client.host, $host, 'IO::Socket::INET correct host';
 is $client.port, $port, 'IO::Socket::INET correct port';
 
 $client.send("GET / HTTP/1.0\r\n\r\n");
-my @data;
+my $ret;
 while (my $str = $client.recv) {
-  @data.push($str);
+  $ret ~= $str;
 }
 $client.close;
+ok $ret.match(/ ^^ 'HTTP/1.1 200 OK' $$ /), 'HTTP Status Code: 200';
+ok $ret.match(/ ^^ 'Content-Type: text/plain' $$ /), 'Content-Type';
+ok $ret.match(/ ^^ 'Content-Length: 12' $$ /), 'Content-Length';
+ok $ret.match(/ ^^ 'Hello world!' $$ /), "Content: Hello World!";
 
-is @data[0], "HTTP/1.1 200 OK\r\n", "Code: 200";
-is @data[1], "Content-Type: text/plain\r\nConnection: close\r\nContent-Length: 12\r\n\r\n", "Content-type correct";
-is @data[2], "Hello world!", "Content: Hello World!";
-
+# vi:syntax=perl6

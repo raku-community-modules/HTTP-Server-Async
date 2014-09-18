@@ -67,22 +67,24 @@ class HTTP::Server::Async does Pluggable {
   }
 
   method !respond($req, $res) {
-    my $promise;
-    for @.responsestack -> $sub {
-      try {
-        $promise = Promise.new;
-        $sub.($req, $res, sub (Bool $keep? = False) { $keep ?? $promise.keep(True) !! $promise.break(True); } );
-        await Promise.anyof($promise, $res.promise);
-        last if $res.promise.status == Kept;
-      };
-    }
+    my $timeout = Promise.in(30);
+    my $exhaust = Promise.new;
+    my $index = 0;
+    my $s = sub (Bool $next? = True) {
+      if (!so $next || $index >= @.responsestack.elems || $res.promise.status == Kept) {
+        $exhaust.keep(True);
+        return;
+      }
+      @.responsestack[$index++]( $req, $res, $s );
+    };
+    $s(True);
+    await Promise.anyof($timeout, $exhaust);
 
     try {
-      $res.close if $res.promise.status != Kept;
-      $promise.keep(Nil);
+      $res.promise.keep(True), $res.close if $res.promise.status != Kept;
     };
-    ($promise, $res.promise).map(-> $p { try { $p.keep(Nil); }; });
-    await Promise.allof($promise, $res.promise);
+    ($timeout, $exhaust, $res.promise).map(-> $p { try { $p.keep(Nil); }; });
+    await Promise.allof($timeout, $exhaust, $res.promise);
   }
 
 };

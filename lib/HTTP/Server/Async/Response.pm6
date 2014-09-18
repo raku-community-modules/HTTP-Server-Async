@@ -36,11 +36,11 @@ class HTTP::Server::Async::Response {
   }
 
   method close($data?) {
-    if Any !~~ $data.WHAT {
-      try {
+    try {
+      if Any !~~ $data.WHAT {
         $.write($data);
-      };
-    }
+      }
+    };
     try {
       self!sendheaders(True) if $.buffered;
     };
