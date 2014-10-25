@@ -1,5 +1,6 @@
 #!/usr/bin/env perl6-j
 
+use lib 'lib';
 use lib 't/lib';
 use HTTP::Server::Async;
 use Test;

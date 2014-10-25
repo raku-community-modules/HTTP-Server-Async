@@ -31,7 +31,7 @@ class HTTP::Server::Async::Request {
           $.version = @method.pop;
           $.uri     = @method.join(' ');
           $!headercomplete = True if $data.index("\r\n\r\n");
-          CATCH { .handled = True; .resume; return False;  }
+          #CATCH { .handled = True; .resume; return False;  }
         };
       }
 
@@ -48,7 +48,7 @@ class HTTP::Server::Async::Request {
               $i     += $tr + 2;
             }
             $!requestcomplete = True if $tr == 0;
-            CATCH { .handled = True; .resume; }
+            #CATCH { .handled = True; .resume; }
           };
           $.promise.vow.keep(1) if $!requestcomplete;
         } elsif $bodystr ~~ Str {

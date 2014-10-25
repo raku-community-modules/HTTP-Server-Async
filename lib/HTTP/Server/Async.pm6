@@ -48,7 +48,8 @@ class HTTP::Server::Async does Pluggable {
                 }
               };
             }
-            self!respond($request, $response) if so $rbool;
+            start { self!respond($request, $response); } if so $rbool;
+            #CATCH { .handled = True; }
           };
         });
       } else {
