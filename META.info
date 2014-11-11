@@ -2,7 +2,12 @@
   "name"        : "HTTP::Server::Async",
   "version"     : "0.1.0",
   "description" : "Asynchronous Base HTTP Server",
-  "author"      : "Tony ODell",
+  "auth"        : "github:tony-o",
   "depends"     : [ "Pluggable" ],
+  "provides" : {
+    "HTTP::Server::Async" : "lib/HTTP/Server/Async.pm6",  
+    "HTTP::Server::Async::Request"  : "/lib/HTTP/Server/Async/Request.pm6",
+    "HTTP::Server::Async::Response" : "/lib/HTTP/Server/Async/Response.pm6"
+  },
   "source-url"  : "git://github.com/tony-o/perl6-http-server-async.git"
 } 
