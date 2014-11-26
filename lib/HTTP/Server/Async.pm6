@@ -27,7 +27,6 @@ class HTTP::Server::Async does Pluggable {
     $!promise   = Promise.new;
     $!server    = IO::Socket::Async.listen($.host, $.port) or 
                      die "Couldn't listen on $.host:$.port";
-    $!server.live.say;
     $!parser    = Channel.new;
     $!responder = Channel.new;
     @!plugins   = @($.plugins);
@@ -46,10 +45,8 @@ class HTTP::Server::Async does Pluggable {
       });
 
     }, quit => {
-      'done'.say;
+      'server quit'.say;
       $!promise.vow.keep(True); 
-    }, closing => {
-      's'.say; 
     });
 
   }
