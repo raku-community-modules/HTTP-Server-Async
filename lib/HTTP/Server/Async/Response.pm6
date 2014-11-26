@@ -13,7 +13,7 @@ class HTTP::Server::Async::Response {
     try {
       $!senthead = True;
       my @pairs = map { "$_: {%.headers{$_}}" }, %.headers.keys;
-      @pairs.push("Content-Length: {@!buffer.join('').chars}");
+      @pairs.push("Content-Length: {@!buffer.join('').chars}") if $.buffered;
       my $promise = $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
       await $promise;
       $promise = $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");

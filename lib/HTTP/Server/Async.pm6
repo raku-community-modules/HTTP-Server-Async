@@ -1,92 +1,130 @@
-#!/usr/bin/env perl6
-
 use HTTP::Server::Async::Request;
 use HTTP::Server::Async::Response;
 use Pluggable;
 
 class HTTP::Server::Async does Pluggable {
-  has $.host          = '127.0.0.1';
-  has $.port          = 8080;
-  has $.debug         = 1;
-  has $.timeout       = 30;
-  has Bool $.buffered = True;
-  has $!thread_buffer = 3;
-  has @!plugins;
-  has $!prom;
-  has $!conn;
+  has Str     $.host     = '127.0.0.1';
+  has Int     $.port     = 8080;
+  has Bool    $.buffered = True;
+
+  has Promise $!promise;
+  has Channel $!parser;
+  has Channel $!responder;
+  
   has @.responsestack;
+  has %!connections;
+  has @!plugins;
+  has $!server;
 
-
-  method getplugins($pattern?, :$force = False) {
-    @!plugins = @($.plugins) if so $force;
-    return grep { $pattern:defined ?? .match($pattern) !! not .match(/^\s*$/) }, @!plugins;
+  method !getplugins($pattern?, :$force = False) {
+    @!plugins = @($.plugins) if $force;
+    return @!plugins if defined $pattern;
+    return grep { .match($pattern) }, @!plugins;
   }
 
-  method listen() {
-    my $num = 0;
-    $!prom  = Promise.new;
-    $!conn  = IO::Socket::Async.listen($.host,$.port,) or die "Couldn't listen on port: $.port";
-    $.getplugins(:force(True));
-    $!conn.tap(-> $connection {
-      if $*SCHEDULER.max_threads > $*SCHEDULER.loads + $!thread_buffer {
-        my $data     = '';
-        my $request  = HTTP::Server::Async::Request.new;
-        my $response = HTTP::Server::Async::Response.new(:$connection, :$.buffered); 
-        my ($rbool, $cbool);
-        my $tap      = $connection.chars_supply.tap({ 
-          try {
-            $data ~= $_;
-            $rbool = $request.parse($data);
-            return if !so $rbool;
-            for $.getplugins(/ 'Plugins::Middleware' /, :force(so $.debug ?? True !! False)) -> $class {
-              try {
-                $cbool = ::($class).new(:$data, :$request, :$response, :$tap).status;
-                if $cbool {
-                  $tap.close;
-                  $rbool = False;
-                  last;
-                }
-              };
-            }
-            start { self!respond($request, $response); } if so $rbool;
-            #CATCH { .handled = True; }
-          };
+  method listen {
+    my $connid  = 0;
+    $!promise   = Promise.new;
+    $!server    = IO::Socket::Async.listen($.host, $.port) or 
+                     die "Couldn't listen on $.host:$.port";
+    $!server.live.say;
+    $!parser    = Channel.new;
+    $!responder = Channel.new;
+    @!plugins   = @($.plugins);
+
+    self!parse_worker;
+    self!respond_worker;
+    $!server.tap(-> $connection {
+      my $id  = $connid++;
+      my $tap = $connection.chars_supply.tap(-> $data {
+        $!parser.send({ 
+          id         => $connid, 
+          connection => $connection, 
+          data       => $data,
+          tap        => $tap,
         });
-      } else {
-        $connection.close;
-      }
+      });
+
     }, quit => {
-      $!prom.vow.keep(1);
+      'done'.say;
+      $!promise.vow.keep(True); 
+    }, closing => {
+      's'.say; 
     });
+
   }
 
-  method block {
-    await $!prom;
-  }
-
-  method register(Callable $sub) {
+  method register(Callable $sub){
     @.responsestack.push($sub);
   }
 
-  method !respond($req, $res) {
-    my $timeout = Promise.in($.timeout);
-    my $exhaust = Promise.new;
-    my $index = 0;
-    my $s = sub (Bool $next? = True) {
-      if (!so $next || $index >= @.responsestack.elems || $res.promise.status == Kept) {
-        $exhaust.keep(True);
-        return;
-      }
-      @.responsestack[$index++]( $req, $res, $s );
-    };
-    start { $s(True); };
-    await Promise.anyof($timeout, $exhaust);
+  method block {
+    await $!promise;
+    $!parser.close;
+    $!responder.close;
+  };
 
-    try {
-      $res.promise.keep(True), $res.close if $res.promise.status != Kept;
-    };
-    ($timeout, $exhaust, $res.promise).map(-> $p { try { $p.keep(Nil); }; });
-    await Promise.allof($timeout, $exhaust, $res.promise);
+  method !parse_worker {
+    start {
+      loop {
+        my $p = $!parser.receive;
+        try {
+          if !defined %!connections<id> {
+            %!connections{$p<id>} = { 
+              data => '',
+              req  => HTTP::Server::Async::Request.new,
+              res  => HTTP::Server::Async::Response.new(
+                        :connection($p<connection>), :$.buffered),
+              tap  => $p<tap>,
+              connection => $p<connection>,
+              processing => False,
+            };
+          }
+          %!connections{$p<id>}<data> ~= $p<data>;
+          my $rbool = %!connections{$p<id>}<req>.parse($p<data>); 
+          for self!getplugins(/ 'Plugins::Middleware' /) -> $class {
+            try {
+              $class.say;
+              my $cbool = ::($class).new(
+                request    => %!connections{$p<id>}<req>,
+                response   => %!connections{$p<id>}<res>,
+                tap        => %!connections{$p<id>}<tap>,
+                connection => %!connections{$p<id>}<connection>,
+              ).status;
+              if $cbool {
+                %!connections{$p<id>}<tap>.close;
+                next;
+              }
+              CATCH { .say; }
+            };
+          }
+          $!responder.send($p<id>) if $rbool; 
+          CATCH { .say; }
+        };
+      }
+    }
   }
 
-};
+  method !respond_worker {
+    start {
+      loop {
+        my $r = $!responder.receive;
+        next if %!connections{$r}<processing>;
+        %!connections{$r}<processing> = True;
+        my $index = 0;
+        my $s = sub (Bool $next? = True) {
+          if !$next || $index >= @.responsestack.elems || %!connections{$r}<res>.promise.status == Kept {
+            #delete %!connections<$r>
+            %!connections{$r}<connection>.close;
+            %!connections{$r}<tap>.close;
+            %!connections.delete_key($r);
+            return;
+          }
+          @.responsestack[$index++](%!connections{$r}<req>, %!connections{$r}<res>, $s);
+        };
+        $s();
+        CATCH { .say; }
+      }
+    }
+  }
+}
