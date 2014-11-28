@@ -15,11 +15,11 @@ $s.listen;
 
 my $host = '127.0.0.1';
 my $port = 8080;
-my $client = IO::Socket::INET.new(:$host, :$port);
+my $client = IO::Socket::INET.new(:$host, :$port) or die 'dead';
 $client.send("GET / HTTP/1.0\r\n");
 sleep 10;
 $client.send("\r\n");
-my $data = 0;
+my $data;
 while (my $str = $client.recv) {
   $data ~= $str;
 }

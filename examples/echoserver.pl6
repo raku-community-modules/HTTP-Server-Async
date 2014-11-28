@@ -1,5 +1,7 @@
 #!/usr/bin/env perl6
 
+use lib 'lib';
+use lib '../lib';
 use HTTP::Server::Async;
 
 my $server = HTTP::Server::Async.new;

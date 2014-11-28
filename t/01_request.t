@@ -6,7 +6,9 @@ use Test;
 
 plan 11;
 
-my $s = HTTP::Server::Async.new;
+my $host = '127.0.0.1';
+my $port = (6000..8000).pick;
+my $s = HTTP::Server::Async.new(:$host, :$port);
 isa_ok $s, HTTP::Server::Async;
 is $s.responsestack.elems, 0, 'Response stack contains no elements yet';
 
@@ -28,10 +30,8 @@ isa_ok $s.responsestack[0], Sub;
 
 $s.listen;
 
-my $host = '127.0.0.1';
-my $port = 8080;
  
-my $client = IO::Socket::INET.new(:$host, :$port);
+my $client = IO::Socket::INET.new(:$host, :$port) or die 'couldn\'t connect';
 isa_ok $client, IO::Socket::INET;
 is $client.host, $host, 'IO::Socket::INET correct host';
 is $client.port, $port, 'IO::Socket::INET correct port';

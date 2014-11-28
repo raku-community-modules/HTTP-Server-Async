@@ -7,6 +7,7 @@ use Test;
 plan 1;
 
 my $s = HTTP::Server::Async.new;
+
 $s.register(sub ($request, $response, $n) {
   await $request.promise;
   $response.headers<Content-Type> = 'text/plain';

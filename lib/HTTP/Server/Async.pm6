@@ -1,11 +1,11 @@
 use HTTP::Server::Async::Request;
 use HTTP::Server::Async::Response;
-use Pluggable;
 
-class HTTP::Server::Async does Pluggable {
+class HTTP::Server::Async {
   has Str     $.host     = '127.0.0.1';
   has Int     $.port     = 8080;
   has Bool    $.buffered = True;
+  has Int     $.timeout  = 30;
 
   has Promise $!promise;
   has Channel $!parser;
@@ -13,13 +13,12 @@ class HTTP::Server::Async does Pluggable {
   
   has @.responsestack;
   has %!connections;
-  has @!plugins;
+  has @!middleware;
   has $!server;
 
-  method !getplugins($pattern?, :$force = False) {
-    @!plugins = @($.plugins) if $force;
-    return @!plugins if defined $pattern;
-    return grep { .match($pattern) }, @!plugins;
+  method middleware(Str $class) {
+    require($class);
+    @!middleware.push($class);
   }
 
   method listen {
@@ -27,10 +26,8 @@ class HTTP::Server::Async does Pluggable {
     $!promise   = Promise.new;
     $!server    = IO::Socket::Async.listen($.host, $.port) or 
                      die "Couldn't listen on $.host:$.port";
-    $!server.live.say;
     $!parser    = Channel.new;
     $!responder = Channel.new;
-    @!plugins   = @($.plugins);
 
     self!parse_worker;
     self!respond_worker;
@@ -42,16 +39,20 @@ class HTTP::Server::Async does Pluggable {
           connection => $connection, 
           data       => $data,
           tap        => $tap,
+          now        => now,
         });
       });
-
     }, quit => {
-      'done'.say;
       $!promise.vow.keep(True); 
-    }, closing => {
-      's'.say; 
     });
 
+    $*SCHEDULER.cue({
+      for %!connections.keys -> $c {
+        if (now - %!connections{$c}<now>).Int > $.timeout {
+          %!connections{$c}<connection>.close;          
+        }
+      }
+    }, :every($.timeout < 1 ?? $.timeout !! 2));
   }
 
   method register(Callable $sub){
@@ -69,9 +70,10 @@ class HTTP::Server::Async does Pluggable {
       loop {
         my $p = $!parser.receive;
         try {
-          if !defined %!connections<id> {
+          if !defined %!connections{$p<id>} {
             %!connections{$p<id>} = { 
               data => '',
+              now  => $p<now>,
               req  => HTTP::Server::Async::Request.new,
               res  => HTTP::Server::Async::Response.new(
                         :connection($p<connection>), :$.buffered),
@@ -81,17 +83,17 @@ class HTTP::Server::Async does Pluggable {
             };
           }
           %!connections{$p<id>}<data> ~= $p<data>;
-          my $rbool = %!connections{$p<id>}<req>.parse($p<data>); 
-          for self!getplugins(/ 'Plugins::Middleware' /) -> $class {
+          my $rbool = %!connections{$p<id>}<req>.parse(%!connections{$p<id>}<data>); 
+          for @!middleware -> $class {
             try {
-              $class.say;
-              my $cbool = ::($class).new(
+              my $rval = ::($class).new(
                 request    => %!connections{$p<id>}<req>,
                 response   => %!connections{$p<id>}<res>,
                 tap        => %!connections{$p<id>}<tap>,
                 connection => %!connections{$p<id>}<connection>,
-              ).status;
-              if $cbool {
+              );
+
+              if $rval.status {
                 %!connections{$p<id>}<tap>.close;
                 next;
               }
