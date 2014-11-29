@@ -10,6 +10,7 @@ class HTTP::Server::Async {
   has Promise $!promise;
   has Channel $!parser;
   has Channel $!responder;
+  has Channel $!timeoutc;
   
   has @.responsestack;
   has %!connections;
@@ -21,6 +22,21 @@ class HTTP::Server::Async {
     @!middleware.push($class);
   }
 
+  method !timeout_worker {
+    start {
+      loop {
+        $!timeoutc.receive;
+        for %!connections.keys -> $key {
+          try {
+            if (now - %!connections{$key}<now>).Int > $.timeout {
+              %!connections{$key}<connection>.close; 
+            }
+          };
+        }
+      }
+    };
+  }
+
   method listen {
     my $connid  = 0;
     $!promise   = Promise.new;
@@ -28,12 +44,14 @@ class HTTP::Server::Async {
                      die "Couldn't listen on $.host:$.port";
     $!parser    = Channel.new;
     $!responder = Channel.new;
+    $!timeoutc  = Channel.new;
 
     self!parse_worker;
     self!respond_worker;
+    self!timeout_worker;
     $!server.tap(-> $connection {
-      my $id  = $connid++;
-      my $tap = $connection.chars_supply.tap(-> $data {
+      my $id      = $connid++;
+      my $tap     = $connection.chars_supply.tap(-> $data {
         $!parser.send({ 
           id         => $connid, 
           connection => $connection, 
@@ -47,12 +65,10 @@ class HTTP::Server::Async {
     });
 
     $*SCHEDULER.cue({
-      for %!connections.keys -> $c {
-        if (now - %!connections{$c}<now>).Int > $.timeout {
-          %!connections{$c}<connection>.close;          
-        }
-      }
-    }, :every($.timeout < 1 ?? $.timeout !! 2));
+      try {
+        $!timeoutc.send(Nil);
+      };
+    }, :every($.timeout < 2 ?? $.timeout !! 2));
   }
 
   method register(Callable $sub){
