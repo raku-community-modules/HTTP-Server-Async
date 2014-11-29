@@ -22,21 +22,6 @@ class HTTP::Server::Async {
     @!middleware.push($class);
   }
 
-  method !timeout_worker {
-    start {
-      loop {
-        $!timeoutc.receive;
-        for %!connections.keys -> $key {
-          try {
-            if (now - %!connections{$key}<now>).Int > $.timeout {
-              %!connections{$key}<connection>.close; 
-            }
-          };
-        }
-      }
-    };
-  }
-
   method listen {
     my $connid  = 0;
     $!promise   = Promise.new;
@@ -80,6 +65,21 @@ class HTTP::Server::Async {
     $!parser.close;
     $!responder.close;
   };
+
+  method !timeout_worker {
+    start {
+      loop {
+        $!timeoutc.receive;
+        for %!connections.keys -> $key {
+          try {
+            if (now - %!connections{$key}<now>).Int > $.timeout {
+              %!connections{$key}<connection>.close; 
+            }
+          };
+        }
+      }
+    };
+  }
 
   method !parse_worker {
     start {
