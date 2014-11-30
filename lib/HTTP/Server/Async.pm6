@@ -46,7 +46,7 @@ class HTTP::Server::Async {
         });
       });
       $*SCHEDULER.cue({
-        $!timeoutc.send($connection);
+        $!timeoutc.send($connection // Nil);
       }, :in($.timeout));
     }, quit => {
       $!promise.vow.keep(True); 
