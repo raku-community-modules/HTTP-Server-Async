@@ -45,15 +45,12 @@ class HTTP::Server::Async {
           now        => now,
         });
       });
+      $*SCHEDULER.cue({
+        $!timeoutc.send($connection);
+      }, :in($.timeout));
     }, quit => {
       $!promise.vow.keep(True); 
     });
-
-    $*SCHEDULER.cue({
-      try {
-        $!timeoutc.send(Nil);
-      };
-    }, :every($.timeout < 2 ?? $.timeout !! 2));
   }
 
   method register(Callable $sub){
@@ -69,13 +66,9 @@ class HTTP::Server::Async {
   method !timeout_worker {
     start {
       loop {
-        $!timeoutc.receive;
-        for %!connections.keys -> $key {
-          try {
-            if (now - %!connections{$key}<now>).Int > $.timeout {
-              %!connections{$key}<connection>.close; 
-            }
-          };
+        my $conn = $!timeoutc.receive;
+        try {
+          $conn.close;
         }
       }
     };
