@@ -11,6 +11,7 @@ my $s = HTTP::Server::Async.new;
 
 
 my Str $timetest = time.Str;
+$s.middleware('HTTP::Server::Async::Plugins::Middleware::Inject');
 $s.register(sub ($req,$res,$n) {
   $res.close($timetest);
 });

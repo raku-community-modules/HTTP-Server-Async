@@ -31,7 +31,6 @@ class HTTP::Server::Async::Request {
           $.version = @method.pop;
           $.uri     = @method.join(' ');
           $!headercomplete = True if $data.index("\r\n\r\n");
-          #CATCH { .handled = True; .resume; return False;  }
         };
       }
 

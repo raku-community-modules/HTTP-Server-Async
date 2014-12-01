@@ -5,8 +5,9 @@ use lib 'lib';
 use HTTP::Server::Async;
 
 my $s = HTTP::Server::Async.new;
+$s.middleware('HTTP::Server::Async::Plugins::Middleware::Hijack');
 
-#note that there are no handlers here, check 
+#note that these handlers are never called, check 
 #  <repo>/examples/lib/HTTP/Server/Async/Plugins/Middleware/Hijack.pm6
 #  for more info
 $s.register(sub ($request, $response, $last) {
