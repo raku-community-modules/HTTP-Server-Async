@@ -1,12 +1,12 @@
 #!/usr/bin/env perl6-j
 
-use lib 'lib';
-use HTTP::Server::Async;
+use lib 't/lib';
+use starter;
 use Test;
 
 plan 1;
 
-my $s = HTTP::Server::Async.new;
+my $s = srv;
 
 $s.register(sub ($request, $response, $n) {
   await $request.promise;
@@ -16,10 +16,7 @@ $s.register(sub ($request, $response, $n) {
 });
 $s.listen;
 
-my $host = '127.0.0.1';
-my $port = 8080;
- 
-my $client = IO::Socket::INET.new(:$host, :$port);
+my $client = req;
 $client.send("GET / HTTP/1.0\r\nTransfer-Encoding: chunked\r\n\r\n");
 my @chunks = "4\r\n", "Wiki\r\n", "5\r\n", "pedia\r\n", "e\r\n", " in\r\n\r\nchunks.\r\n", "0\r\n", "\r\n";
 for @chunks -> $chunk {

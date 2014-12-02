@@ -1,21 +1,19 @@
 #!/usr/bin/env perl6-j
 
-use lib 'lib';
-use HTTP::Server::Async;
+use lib 't/lib';
+use starter;
 use Test;
 
 plan 1;
 
-my $s = HTTP::Server::Async.new(:buffered(False));
+my $s = srv(:buffered(False));
 
 $s.register(sub ($request, $response, $n) {
   $response.close('Hello');
 });
 $s.listen;
 
-my $host = '127.0.0.1';
-my $port = 8080;
-my $client = IO::Socket::INET.new(:$host, :$port) or die 'dead';
+my $client = req;
 $client.send("GET / HTTP/1.0\r\n");
 sleep 10;
 $client.send("\r\n");

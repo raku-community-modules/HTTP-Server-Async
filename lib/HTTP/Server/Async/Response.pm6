@@ -50,7 +50,7 @@ class HTTP::Server::Async::Response {
       }
     };
     try {
-      $.connection.close;
+      $.connection.close;# if %.headers<Connection> ne 'Keep-Alive';
     };
     try {
       $.promise.keep(True);

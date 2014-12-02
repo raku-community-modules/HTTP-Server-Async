@@ -1,14 +1,12 @@
 #!/usr/bin/env perl6-j
 
-use lib 'lib';
-use HTTP::Server::Async;
+use lib 't/lib';
+use starter;
 use Test;
 
 plan 11;
 
-my $host = '127.0.0.1';
-my $port = (6000..8000).pick;
-my $s = HTTP::Server::Async.new(:$host, :$port);
+my $s = srv;
 isa_ok $s, HTTP::Server::Async;
 is $s.responsestack.elems, 0, 'Response stack contains no elements yet';
 
@@ -31,10 +29,10 @@ isa_ok $s.responsestack[0], Sub;
 $s.listen;
 
  
-my $client = IO::Socket::INET.new(:$host, :$port) or die 'couldn\'t connect';
+my $client = req;
 isa_ok $client, IO::Socket::INET;
-is $client.host, $host, 'IO::Socket::INET correct host';
-is $client.port, $port, 'IO::Socket::INET correct port';
+is $client.host, host, 'IO::Socket::INET correct host';
+is $client.port, port, 'IO::Socket::INET correct port';
 
 $client.send("GET / HTTP/1.0\r\n\r\n");
 my $ret;

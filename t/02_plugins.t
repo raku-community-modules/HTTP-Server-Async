@@ -1,14 +1,12 @@
 #!/usr/bin/env perl6-j
 
-use lib 'lib';
 use lib 't/lib';
-use HTTP::Server::Async;
+use starter;
 use Test;
 
 plan 2;
 
-my $s = HTTP::Server::Async.new;
-
+my $s = srv;
 
 my Str $timetest = time.Str;
 $s.middleware('HTTP::Server::Async::Plugins::Middleware::Inject');
@@ -17,10 +15,7 @@ $s.register(sub ($req,$res,$n) {
 });
 $s.listen;
 
-my $host = '127.0.0.1';
-my $port = 8080;
- 
-my $client = IO::Socket::INET.new(:$host, :$port);
+my $client = req;
 
 $client.send("GET / HTTP/1.0\r\n\r\n");
 my $data;

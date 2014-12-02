@@ -1,12 +1,12 @@
 #!/usr/bin/env perl6-j
 
-use lib 'lib';
-use HTTP::Server::Async;
+use lib 't/lib';
+use starter;
 use Test;
 
 plan 1;
 
-my $s = HTTP::Server::Async.new;
+my $s = srv;
 $s.register(sub ($request, $response, $n) {
   $response.headers<Content-Type> = 'text/plain';
   $response.status = 404;
@@ -15,9 +15,7 @@ $s.register(sub ($request, $response, $n) {
 });
 $s.listen;
 
-my $host = '127.0.0.1';
-my $port = 8080;
-my $client = IO::Socket::INET.new(:$host, :$port);
+my $client = req;
 $client.send("GET / HTTP/1.0\r\n\r\n");
 my $ret;
 while (my $str = $client.recv) {
