@@ -40,7 +40,7 @@ class HTTP::Server::Async::Response {
     };
   }
 
-  method close($data?) {
+  method close($data?, :$force? = False) {
     try {
       if Any !~~ $data.WHAT {
         $.write($data);
@@ -55,7 +55,7 @@ class HTTP::Server::Async::Response {
       }
     };
     try {
-      if !%.headers<Connection>.match(/ 'keep-alive' /) {
+      if !%.headers<Connection>.match(/ 'keep-alive' /) || $force {
         $.connection.close;
       }
     };

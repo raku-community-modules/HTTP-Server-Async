@@ -135,18 +135,20 @@ class HTTP::Server::Async {
         my $r = $!responder.receive;
         next if %!connections{$r}<processing>;
         %!connections{$r}<processing> = True;
-        my $index = 0;
+        my $req = %!connections{$r}<req>;
+        my $res = %!connections{$r}<res>;
+        my $*index = 0;
         my $s = sub (Bool $next? = True) {
-          if !$next || $index >= @.responsestack.elems || %!connections{$r}<res>.promise.status == Kept {
+          if !$next || $*index >= @.responsestack.elems || $res.promise.status ~~ Kept {
             #delete %!connections<$r>
-            if !(%!connections{$r}<res>.headers<Connection> // '').match(/ ^ 'keep-alive' /) {
+            if !($res.headers<Connection> // '').match(/ 'keep-alive' /) {
               %!connections{$r}<connection>.close; 
               %!connections{$r}<tap>.close;
               %!connections.delete_key($r);
             }
             return;
           }
-          @.responsestack[$index++](%!connections{$r}<req>, %!connections{$r}<res>, $s);
+          @.responsestack[$*index++]($req, $res, $s);
         };
         $s();
         CATCH { .say; }
