@@ -10,8 +10,6 @@ class HTTP::Server::Async::Request {
   has $!requestcomplete = False;
   has $.promise         = Promise.new;
 
-  has $.cacheptr is rw  = 0;
-
   method parse ($data) {
     try {
       my ($headerstr, $bodystr) = $data.split("\r\n\r\n", 2);

@@ -79,17 +79,30 @@ class HTTP::Server::Async {
       loop {
         my $p = $!parser.receive;
         try {
-          if !defined %!connections{$p<id>} {
+          if ! %!connections.exists_key($p<id>) {
+            my $req = HTTP::Server::Async::Request.new;
             %!connections{$p<id>} = { 
-              data => '',
-              now  => $p<now>,
-              req  => HTTP::Server::Async::Request.new,
-              res  => HTTP::Server::Async::Response.new(
-                        :connection($p<connection>), :$.buffered),
-              tap  => $p<tap>,
+              data       => '',
+              now        => $p<now>,
+              req        => $req,
+              res        => HTTP::Server::Async::Response.new(
+                              :connection($p<connection>), 
+                              :$.buffered,
+                              :request($req),
+                            ),
+              tap        => $p<tap>,
               connection => $p<connection>,
               processing => False,
             };
+          } elsif %!connections{$p<id>}<req>.promise.status ~~ Kept {
+            %!connections{$p<id>}<data> = '';
+            %!connections{$p<id>}<req>  = HTTP::Server::Async::Request.new;
+            %!connections{$p<id>}<res>  = HTTP::Server::Async::Response.new(
+                                            :connection($p<connection>), 
+                                            :$.buffered,
+                                            :request(%!connections{$p<id>}<req>),
+                                          );
+            %!connections{$p<id>}<processing> = False;
           }
           %!connections{$p<id>}<data> ~= $p<data>;
           my $rbool = %!connections{$p<id>}<req>.parse(%!connections{$p<id>}<data>); 
@@ -126,9 +139,11 @@ class HTTP::Server::Async {
         my $s = sub (Bool $next? = True) {
           if !$next || $index >= @.responsestack.elems || %!connections{$r}<res>.promise.status == Kept {
             #delete %!connections<$r>
-            %!connections{$r}<connection>.close;
-            %!connections{$r}<tap>.close;
-            %!connections.delete_key($r);
+            if !(%!connections{$r}<res>.headers<Connection> // '').match(/ ^ 'keep-alive' /) {
+              %!connections{$r}<connection>.close; 
+              %!connections{$r}<tap>.close;
+              %!connections.delete_key($r);
+            }
             return;
           }
           @.responsestack[$index++](%!connections{$r}<req>, %!connections{$r}<res>, $s);

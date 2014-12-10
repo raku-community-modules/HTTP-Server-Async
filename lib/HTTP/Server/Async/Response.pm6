@@ -1,15 +1,20 @@
+use HTTP::Server::Async::Request;
 class HTTP::Server::Async::Response {
   has Int  $.status is rw = 200;
   has Bool $.buffered = True;
   has Bool $!str      = True;
   has Bool $!senthead = False;
+  has HTTP::Server::Async::Request $.request;
   has $.promise = Promise.new;
-  has %.headers is rw = qw«Content-Type text/html Connection close»;
+  has %.headers is rw = Content-Type => 'text/html', Connection => 'keep-alive';
   has @!buffer;
   has $.connection;
 
   method !sendheaders (Bool $lastcall? = False) {
     return if $!senthead || (!$lastcall && $.buffered);
+    if ($.request.headers<Connection> // '').match(/ ^ 'keep-alive' /) {
+      %.headers<Connection> = 'keep-alive';
+    }
     try {
       $!senthead = True;
       my @pairs = map { "$_: {%.headers{$_}}" }, %.headers.keys;
@@ -50,7 +55,9 @@ class HTTP::Server::Async::Response {
       }
     };
     try {
-      $.connection.close;# if %.headers<Connection> ne 'Keep-Alive';
+      if !%.headers<Connection>.match(/ 'keep-alive' /) {
+        $.connection.close;
+      }
     };
     try {
       $.promise.keep(True);
