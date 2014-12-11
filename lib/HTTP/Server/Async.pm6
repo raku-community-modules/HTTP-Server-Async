@@ -137,9 +137,9 @@ class HTTP::Server::Async {
         %!connections{$r}<processing> = True;
         my $req = %!connections{$r}<req>;
         my $res = %!connections{$r}<res>;
-        my $*index = 0;
+        my $index = 0;
         my $s = sub (Bool $next? = True) {
-          if !$next || $*index >= @.responsestack.elems || $res.promise.status ~~ Kept {
+          if !$next || $index >= @.responsestack.elems || $res.promise.status ~~ Kept {
             #delete %!connections<$r>
             if !($res.headers<Connection> // '').match(/ 'keep-alive' /) {
               %!connections{$r}<connection>.close; 
@@ -148,7 +148,7 @@ class HTTP::Server::Async {
             }
             return;
           }
-          @.responsestack[$*index++]($req, $res, $s);
+          @.responsestack[$index++]($req, $res, $s);
         };
         $s();
         CATCH { .say; }

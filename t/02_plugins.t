@@ -11,6 +11,7 @@ my $s = srv;
 my Str $timetest = time.Str;
 $s.middleware('HTTP::Server::Async::Plugins::Middleware::Inject');
 $s.register(sub ($req,$res,$n) {
+  $res.headers<Connection> = 'close';
   $res.close($timetest);
 });
 $s.listen;

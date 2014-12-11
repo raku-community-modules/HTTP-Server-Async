@@ -10,6 +10,7 @@ my $s = srv(:timeout(3));
 
 $s.register(sub ($request, $response, $n) {
   sleep 10;
+  $response.headers<Connection> = 'close';
   $response.close("Done");
   $n();
 });

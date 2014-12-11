@@ -9,6 +9,7 @@ plan 1;
 my $s = srv(:buffered(False));
 
 $s.register(sub ($request, $response, $n) {
+  $response.headers<Connection> = 'close';
   $response.close('Hello');
 });
 $s.listen;

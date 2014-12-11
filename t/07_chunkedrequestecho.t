@@ -11,6 +11,7 @@ my $s = srv;
 $s.register(sub ($request, $response, $n) {
   await $request.promise;
   $response.headers<Content-Type> = 'text/plain';
+  $response.headers<Connection> = 'close';
   $response.status = 200;
   $response.close($request.data);
 });

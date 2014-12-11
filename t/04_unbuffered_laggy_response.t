@@ -16,6 +16,7 @@ $s.register(sub ($request, $response, $n) {
   };
 });
 $s.register(sub ($request, $response, $n) {
+  $response.headers<Connection> = 'close';
   $response.close('chunk 2');
 });
 $s.listen;

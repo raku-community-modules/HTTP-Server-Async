@@ -19,6 +19,7 @@ $s.register(sub ($req,$res,$n) {
 
 $s.register(sub ($request, $response, $n) {
   $response.headers<Content-Type> = 'text/plain';
+  $response.headers<Connection>   = 'close';
   $response.status = 200;
   $response.write("");
   $response.close("Hello world!");
@@ -35,7 +36,7 @@ is $client.host, host, 'IO::Socket::INET correct host';
 is $client.port, port, 'IO::Socket::INET correct port';
 
 $client.send("GET / HTTP/1.0\r\n\r\n");
-my $ret;
+my $ret = '';
 while (my $str = $client.recv) {
   $ret ~= $str;
 }

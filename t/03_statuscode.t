@@ -8,6 +8,7 @@ plan 1;
 
 my $s = srv;
 $s.register(sub ($request, $response, $n) {
+  $response.headers<Connection> = 'close';
   $response.headers<Content-Type> = 'text/plain';
   $response.status = 404;
   $response.write("");
