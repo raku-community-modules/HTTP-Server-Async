@@ -19,24 +19,26 @@ class HTTP::Server::Async::Response {
       $!senthead = True;
       my @pairs = map { "$_: {%.headers{$_}}" }, %.headers.keys;
       @pairs.push("Content-Length: {@!buffer.join('').chars}") if $.buffered;
-      my $promise = $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
-      await $promise;
-      $promise = $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
-      await $promise;
-      CATCH { default { .resume; } }
+      print ("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
+      print (@pairs.join("\r\n") ~ "\r\n\r\n");
+      $.connection.send("HTTP/1.1 $!status {%!statuscodes{$!status}}\r\n");
+      $.connection.send(@pairs.join("\r\n") ~ "\r\n\r\n");
+      CATCH { default { .say; .resume; } }
     };
   }
 
   method write($data) {
     return if $data !~~ Str;
+    "WRITE $data".say;
     try {
       self!sendheaders;   
     };
     try { 
       @!buffer.push($data) if $.buffered;
-      await $.connection.write($data) if $data.WHAT !~~ Str && !$.buffered;
-      await $.connection.send($data)  if $data.WHAT  ~~ Str && !$.buffered;
+      $.connection.write($data) if $data.WHAT !~~ Str && !$.buffered;
+      $.connection.send($data)  if $data.WHAT  ~~ Str && !$.buffered;
       $!str = False if $data.WHAT !~~ Str;
+      CATCH { default { .say; .resume; } }
     };
   }
 
@@ -44,6 +46,7 @@ class HTTP::Server::Async::Response {
     try {
       if Any !~~ $data.WHAT {
         $.write($data);
+        say "WRITE $data";
       }
     };
     try {
@@ -51,13 +54,16 @@ class HTTP::Server::Async::Response {
     };
     try {
       if $.buffered {
-        await $.connection.send(@!buffer.join(''));
+        say "SENDING " ~ @!buffer.join;
+        $.connection.send(@!buffer.join);
       }
     };
     try {
       if !%.headers<Connection>.match(/ 'keep-alive' /) || $force {
         $.connection.close;
+        "CLOSE".say;
       }
+      CATCH { default { .say; .resume; } }
     };
     try {
       $.promise.keep(True);

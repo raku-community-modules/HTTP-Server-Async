@@ -37,9 +37,11 @@ is $client.port, port, 'IO::Socket::INET correct port';
 
 $client.send("GET / HTTP/1.0\r\n\r\n");
 my $ret = '';
-while (my $str = $client.recv) {
+while my $str = $client.recv {
+  "ret $str".say;
   $ret ~= $str;
 }
+'closing'.say;
 $client.close;
 ok $ret.match(/ ^^ 'HTTP/1.1 200 OK' $$ /), 'HTTP Status Code: 200';
 ok $ret.match(/ ^^ 'Content-Type: text/plain' $$ /), 'Content-Type';

@@ -36,15 +36,15 @@ class HTTP::Server::Async {
     self!timeout_worker;
     start {
       while my $connection = $!server.accept {
-        my $id      = $connid++;
-        my $tap     = $connection.chars_supply.tap(-> $data {
-          $!parser.send({ 
-            id         => $connid, 
-            connection => $connection, 
-            data       => $data,
-            tap        => $tap,
-            now        => now,
-          });
+        my $id   = $connid++;
+        say "$connid connected";
+        my $data = $connection.recv;
+        "$connection\n$data\n------------".say;
+        $!parser.send({ 
+          id         => $connid, 
+          connection => $connection, 
+          data       => $data,
+          now        => now,
         });
         $*SCHEDULER.cue({
           $!timeoutc.send($connection // Nil);
@@ -79,6 +79,7 @@ class HTTP::Server::Async {
     start {
       loop {
         my $p = $!parser.receive;
+        "$p<id> parsing..".say;
         try {
           if ! %!connections.exists_key($p<id>) {
             my $req = HTTP::Server::Async::Request.new;
@@ -91,7 +92,6 @@ class HTTP::Server::Async {
                               :$.buffered,
                               :request($req),
                             ),
-              tap        => $p<tap>,
               connection => $p<connection>,
               processing => False,
             };
@@ -112,12 +112,10 @@ class HTTP::Server::Async {
               my $rval = ::($class).new(
                 request    => %!connections{$p<id>}<req>,
                 response   => %!connections{$p<id>}<res>,
-                tap        => %!connections{$p<id>}<tap>,
                 connection => %!connections{$p<id>}<connection>,
               );
 
               if $rval.status {
-                %!connections{$p<id>}<tap>.close;
                 next;
               }
               CATCH { .say; }
@@ -126,6 +124,7 @@ class HTTP::Server::Async {
           $!responder.send($p<id>) if $rbool; 
           CATCH { .say; }
         };
+        CATCH { default { .say; .resume; } }
       }
     }
   }
@@ -135,16 +134,18 @@ class HTTP::Server::Async {
       loop {
         my $r = $!responder.receive;
         next if %!connections{$r}<processing>;
+        "$r responder".say;
         %!connections{$r}<processing> = True;
         my $req = %!connections{$r}<req>;
         my $res = %!connections{$r}<res>;
         my $index = 0;
         my $s = sub (Bool $next? = True) {
+          "$r s'ing".say;
           if !$next || $index >= @.responsestack.elems || $res.promise.status ~~ Kept {
-            #delete %!connections<$r>
+            "$r check close".say;
             if !($res.headers<Connection> // '').match(/ 'keep-alive' /) {
               %!connections{$r}<connection>.close; 
-              %!connections{$r}<tap>.close;
+              "$r close".say;
               %!connections.delete_key($r);
             }
             return;
