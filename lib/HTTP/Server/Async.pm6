@@ -25,7 +25,7 @@ class HTTP::Server::Async {
   method listen {
     my $connid  = 0;
     $!promise   = Promise.new;
-    $!server    = IO::Socket::Async.listen($.host, $.port) or 
+    $!server    = IO::Socket::INET.new(:localhost($.host), :localport($.port), :listen) or 
                      die "Couldn't listen on $.host:$.port";
     $!parser    = Channel.new;
     $!responder = Channel.new;
@@ -34,23 +34,24 @@ class HTTP::Server::Async {
     self!parse_worker;
     self!respond_worker;
     self!timeout_worker;
-    $!server.tap(-> $connection {
-      my $id      = $connid++;
-      my $tap     = $connection.chars_supply.tap(-> $data {
-        $!parser.send({ 
-          id         => $connid, 
-          connection => $connection, 
-          data       => $data,
-          tap        => $tap,
-          now        => now,
+    start {
+      while my $connection = $!server.accept {
+        my $id      = $connid++;
+        my $tap     = $connection.chars_supply.tap(-> $data {
+          $!parser.send({ 
+            id         => $connid, 
+            connection => $connection, 
+            data       => $data,
+            tap        => $tap,
+            now        => now,
+          });
         });
-      });
-      $*SCHEDULER.cue({
-        $!timeoutc.send($connection // Nil);
-      }, :in($.timeout));
-    }, quit => {
+        $*SCHEDULER.cue({
+          $!timeoutc.send($connection // Nil);
+        }, :in($.timeout));
+      }
       $!promise.vow.keep(True); 
-    });
+    };
   }
 
   method register(Callable $sub){

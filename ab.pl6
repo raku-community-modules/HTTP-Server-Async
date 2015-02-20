@@ -13,8 +13,7 @@ $s.register(sub ($req, $res, $next) {
     $res.headers<Content-Type> = 'text/plain';
     $res.status = 200;
     $res.write("Hello ");
-    $res.close("world ({$requests++})!\n");
-    "{$requests}".say;
+    $res.close("world!\n");
   };
 });
 
