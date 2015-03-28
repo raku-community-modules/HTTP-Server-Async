@@ -73,7 +73,8 @@ class HTTP::Server::Async {
         for %!connections.keys -> $key {
           try {
             if (now - %!connections{$key}<now>).Int > $.timeout {
-              %!connections{$key}<connection>.close; 
+              %!connections{$key}<connection>.close;
+              %!connections{$key}:delete;
             }
           };
         }
