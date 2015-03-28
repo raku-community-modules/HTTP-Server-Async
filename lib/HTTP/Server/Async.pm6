@@ -37,8 +37,8 @@ class HTTP::Server::Async {
     $!server.tap(-> $connection {
       my $id      = $connid++;
       my $tap     = $connection.chars_supply.tap(-> $data {
-        $!parser.send({ 
-          id         => $connid, 
+        $!parser.send({
+          id         => $id, 
           connection => $connection, 
           data       => $data,
           tap        => $tap,
