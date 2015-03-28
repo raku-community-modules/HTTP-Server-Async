@@ -79,7 +79,7 @@ class HTTP::Server::Async {
       loop {
         my $p = $!parser.receive;
         try {
-          if ! %!connections{$p<id>}:exists {
+          if !(%!connections{$p<id>}:exists) {
             my $req = HTTP::Server::Async::Request.new;
             %!connections{$p<id>} = { 
               data       => '',
