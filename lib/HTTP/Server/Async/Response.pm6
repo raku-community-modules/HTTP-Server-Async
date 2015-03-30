@@ -1,7 +1,7 @@
 use HTTP::Server::Async::Request;
 class HTTP::Server::Async::Response {
   has Int  $.status is rw = 200;
-  has Bool $.buffered = True;
+  has Bool $.buffered is rw = True;
   has Bool $!str      = True;
   has Bool $!senthead = False;
   has HTTP::Server::Async::Request $.request;
@@ -25,6 +25,28 @@ class HTTP::Server::Async::Response {
       await $promise;
       CATCH { default { .resume; } }
     };
+  }
+
+  method unbuffer {
+    return unless $.buffered;
+    try {
+    $.buffered = False;
+    $.flush;
+    CATCH { default { .say; } }
+    };
+  }
+
+  method rebuffer {
+    return if $.buffered;
+    $.buffered = True;
+  }
+
+  method flush {
+    self!sendheaders(True);
+    for @!buffer -> $buff {
+      await $.connection.write($buff) if $buff.WHAT !~~ Str;
+      await $.connection.send($buff) if $buff.WHAT ~~ Str;
+    }
   }
 
   method write($data) {
