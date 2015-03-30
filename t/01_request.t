@@ -1,4 +1,4 @@
-#!/usr/bin/env perl6-j
+#!/usr/bin/env perl6
 
 use lib 't/lib';
 use starter;
