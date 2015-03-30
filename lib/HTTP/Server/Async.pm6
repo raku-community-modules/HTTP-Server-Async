@@ -38,7 +38,7 @@ class HTTP::Server::Async {
       my $id      = $connid++;
       my $tap     = $connection.chars_supply.tap(-> $data {
         $!parser.send({ 
-          id         => $connid, 
+          id         => $id, 
           connection => $connection, 
           data       => $data,
           tap        => $tap,
@@ -79,7 +79,7 @@ class HTTP::Server::Async {
       loop {
         my $p = $!parser.receive;
         try {
-          if ! %!connections.exists_key($p<id>) {
+          if !(%!connections{$p<id>}:exists) {
             my $req = HTTP::Server::Async::Request.new;
             %!connections{$p<id>} = { 
               data       => '',
