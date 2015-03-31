@@ -8,9 +8,9 @@ class HTTP::Server::Async {
   has Int     $.timeout  = 30;
 
   has Promise $!promise;
-  has Channel $!parser;
-  has Channel $!responder;
-  has Channel $!timeoutc;
+  has Supply $!parser;
+  has Supply $!responder;
+  has Supply $!timeoutc;
   
   has @.responsestack;
   has %!connections;
@@ -27,27 +27,29 @@ class HTTP::Server::Async {
     $!promise   = Promise.new;
     $!server    = IO::Socket::Async.listen($.host, $.port) or 
                      die "Couldn't listen on $.host:$.port";
-    $!parser    = Channel.new;
-    $!responder = Channel.new;
-    $!timeoutc  = Channel.new;
+    $!parser    = Supply.new;
+    $!responder = Supply.new;
+    $!timeoutc  = Supply.new;
 
     self!parse_worker;
     self!respond_worker;
     self!timeout_worker;
     $!server.tap(-> $connection {
-      my $id      = $connid++;
-      my $tap     = $connection.chars_supply.tap(-> $data {
-        $!parser.send({ 
-          id         => $id, 
-          connection => $connection, 
-          data       => $data,
-          tap        => $tap,
-          now        => now,
-          canceller  => $*SCHEDULER.cue({
-            $!timeoutc.send($connection // Nil);
-          }, :in($.timeout)),
+      try { 
+        my $id      = $connid++;
+        my $tap     = $connection.chars_supply.tap(-> $data {
+          $!parser.emit({ 
+            id         => $id, 
+            connection => $connection, 
+            data       => $data,
+            tap        => $tap,
+            now        => now,
+            canceller  => $*SCHEDULER.cue({
+            $!timeoutc.emit($connection // Nil);
+            }, :in($.timeout)),
+          });
         });
-      });
+      };
     }, quit => {
       $!promise.vow.keep(True); 
     });
@@ -64,99 +66,90 @@ class HTTP::Server::Async {
   };
 
   method !timeout_worker {
-    start {
-      loop {
-        my $conn = $!timeoutc.receive;
-        try {
-          $conn.close;
-        }
+    $!timeoutc.tap(-> $conn {
+      try {
+        $conn.close;
       }
-    };
+    });
   }
 
   method !parse_worker {
-    start {
-      loop {
-        my $p = $!parser.receive;
-        try {
-          if !(%!connections{$p<id>}:exists) {
-            my $req = HTTP::Server::Async::Request.new;
-            %!connections{$p<id>} = { 
-              data       => '',
-              now        => $p<now>,
-              req        => $req,
-              res        => HTTP::Server::Async::Response.new(
-                              :connection($p<connection>), 
-                              :$.buffered,
-                              :request($req),
-                            ),
-              tap        => $p<tap>,
-              connection => $p<connection>,
-              processing => False,
-            };
-          } elsif %!connections{$p<id>}<req>.promise.status ~~ Kept {
-            %!connections{$p<id>}<data> = '';
-            %!connections{$p<id>}<req>  = HTTP::Server::Async::Request.new;
-            %!connections{$p<id>}<res>  = HTTP::Server::Async::Response.new(
-                                            :connection($p<connection>), 
-                                            :$.buffered,
-                                            :request(%!connections{$p<id>}<req>),
-                                          );
-            %!connections{$p<id>}<processing> = False;
-          }
-          %!connections{$p<id>}<data> ~= $p<data>;
-          my $rbool = %!connections{$p<id>}<req>.parse(%!connections{$p<id>}<data>); 
-          for @!middleware -> $class {
-            try {
-              my $rval = ::($class).new(
-                request    => %!connections{$p<id>}<req>,
-                response   => %!connections{$p<id>}<res>,
-                tap        => %!connections{$p<id>}<tap>,
-                connection => %!connections{$p<id>}<connection>,
-              );
+    $!parser.tap(-> $p {
+      try {
+        if !(%!connections{$p<id>}:exists) {
+          my $req = HTTP::Server::Async::Request.new;
+          %!connections{$p<id>} = { 
+            data       => '',
+            now        => $p<now>,
+            req        => $req,
+            res        => HTTP::Server::Async::Response.new(
+                            :connection($p<connection>), 
+                            :$.buffered,
+                            :request($req),
+                          ),
+            tap        => $p<tap>,
+            connection => $p<connection>,
+            processing => False,
+          };
+        } elsif %!connections{$p<id>}<req>.promise.status ~~ Kept {
+          %!connections{$p<id>}<data> = '';
+          %!connections{$p<id>}<req>  = HTTP::Server::Async::Request.new;
+          %!connections{$p<id>}<res>  = HTTP::Server::Async::Response.new(
+                                          :connection($p<connection>), 
+                                          :$.buffered,
+                                          :request(%!connections{$p<id>}<req>),
+                                        );
+          %!connections{$p<id>}<processing> = False;
+        }
+        %!connections{$p<id>}<data> ~= $p<data>;
+        my $rbool = %!connections{$p<id>}<req>.parse(%!connections{$p<id>}<data>); 
+        for @!middleware -> $class {
+          try {
+            my $rval = ::($class).new(
+              request    => %!connections{$p<id>}<req>,
+              response   => %!connections{$p<id>}<res>,
+              tap        => %!connections{$p<id>}<tap>,
+              connection => %!connections{$p<id>}<connection>,
+            );
 
-              if $rval.status {
-                %!connections{$p<id>}<tap>.close;
-                next;
-              }
-              CATCH { .say; }
-            };
-          }
-          $!responder.send($p<id>) if $rbool; 
-          CATCH { .say; }
-        };
-      }
-    }
+            if $rval.status {
+              %!connections{$p<id>}<tap>.close;
+              next;
+            }
+            CATCH { default { } }
+          };
+        }
+        $!responder.emit($p<id>) if $rbool; 
+        CATCH { default { } }
+      };
+    });
   }
 
   method !respond_worker {
-    start {
-      loop {
-        my $r = $!responder.receive;
-        next if %!connections{$r}<processing>;
-        %!connections{$r}<processing> = True;
-        my $req = %!connections{$r}<req>;
-        my $res = %!connections{$r}<res>;
-        my $index = 0;
-        my $s = sub (Bool $next? = True) {
-          if !$next || $index >= @.responsestack.elems || $res.promise.status ~~ Kept {
-            try { %!connections{$r}<canceller>.cancel };
-            if !($res.headers<Connection> // '').match(/ 'keep-alive' /) {
-              %!connections{$r}<connection>.close; 
-              %!connections{$r}<tap>.close;
-              %!connections.delete_key($r);
-            } else {
-              %!connections{$r}<canceller> = $*SCHEDULER.cue({
-                $!timeoutc.send(%!connections{$r}<connection> // Nil);
-              }, :in($.timeout));
-            }
-            return;
+    $!responder.tap(-> $r {
+      next if %!connections{$r}<processing>;
+      %!connections{$r}<processing> = True;
+      my $req = %!connections{$r}<req>;
+      my $res = %!connections{$r}<res>;
+      my $index = 0;
+      my $s = sub (Bool $next? = True) {
+        if !$next || $index >= @.responsestack.elems || $res.promise.status ~~ Kept {
+          try { %!connections{$r}<canceller>.cancel };
+          if !($res.headers<Connection> // '').match(/ 'keep-alive' /) {
+            %!connections{$r}<connection>.close; 
+            %!connections{$r}<tap>.close;
+            %!connections.delete_key($r);
+          } else {
+            %!connections{$r}<canceller> = $*SCHEDULER.cue({
+              $!timeoutc.emit(%!connections{$r}<connection> // Nil);
+            }, :in($.timeout));
           }
-          @.responsestack[$index++]($req, $res, $s);
-        };
-        $s();
-        CATCH { .say; }
-      }
-    }
+          return;
+        }
+        @.responsestack[$index++]($req, $res, $s);
+      };
+      $s();
+      CATCH { .say; }
+    });
   }
 }
