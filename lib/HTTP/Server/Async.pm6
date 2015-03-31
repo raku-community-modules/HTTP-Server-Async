@@ -43,11 +43,11 @@ class HTTP::Server::Async {
           data       => $data,
           tap        => $tap,
           now        => now,
+          canceller  => $*SCHEDULER.cue({
+            $!timeoutc.send($connection // Nil);
+          }, :in($.timeout)),
         });
       });
-      $*SCHEDULER.cue({
-        $!timeoutc.send($connection // Nil);
-      }, :in($.timeout));
     }, quit => {
       $!promise.vow.keep(True); 
     });
@@ -140,11 +140,15 @@ class HTTP::Server::Async {
         my $index = 0;
         my $s = sub (Bool $next? = True) {
           if !$next || $index >= @.responsestack.elems || $res.promise.status ~~ Kept {
-            #delete %!connections<$r>
+            try { %!connections{$r}<canceller>.cancel };
             if !($res.headers<Connection> // '').match(/ 'keep-alive' /) {
               %!connections{$r}<connection>.close; 
               %!connections{$r}<tap>.close;
               %!connections.delete_key($r);
+            } else {
+              %!connections{$r}<canceller> = $*SCHEDULER.cue({
+                $!timeoutc.send(%!connections{$r}<connection> // Nil);
+              }, :in($.timeout));
             }
             return;
           }
