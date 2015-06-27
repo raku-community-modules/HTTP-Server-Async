@@ -7,7 +7,7 @@ use Test;
 plan 11;
 
 my $s = srv;
-isa_ok $s, HTTP::Server::Async;
+isa-ok $s, HTTP::Server::Async;
 is $s.responsestack.elems, 0, 'Response stack contains no elements yet';
 
 $s.register(sub ($req,$res,$n) {
@@ -29,13 +29,13 @@ $s.register(sub ($request, $response, $n) {
   };
 });
 ok $s.responsestack.elems, 'Response stack contains elements';
-isa_ok $s.responsestack[0], Sub;
+isa-ok $s.responsestack[0], Sub;
 
 $s.listen;
 
  
 my $client = req;
-isa_ok $client, IO::Socket::INET;
+isa-ok $client, IO::Socket::INET;
 is $client.host, host, 'IO::Socket::INET correct host';
 is $client.port, port, 'IO::Socket::INET correct port';
 
