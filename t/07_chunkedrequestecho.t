@@ -18,10 +18,10 @@ $s.register(sub ($request, $response, $n) {
 $s.listen;
 
 my $client = req;
-$client.send("GET / HTTP/1.0\r\nTransfer-Encoding: chunked\r\n\r\n");
+$client.print("GET / HTTP/1.0\r\nTransfer-Encoding: chunked\r\n\r\n");
 my @chunks = "4\r\n", "Wiki\r\n", "5\r\n", "pedia\r\n", "e\r\n", " in\r\n\r\nchunks.\r\n", "0\r\n", "\r\n";
 for @chunks -> $chunk {
-  $client.send($chunk);
+  $client.print($chunk);
   sleep 1;
 }
 

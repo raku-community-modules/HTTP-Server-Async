@@ -36,7 +36,7 @@ class HTTP::Server::Async {
     self!timeout_worker;
     $!server.tap(-> $connection {
       my $id      = $connid++;
-      my $tap     = $connection.chars_supply.tap(-> $data {
+      my $tap     = $connection.chars-supply.tap(-> $data {
         $!parser.send({ 
           id         => $id, 
           connection => $connection, 
