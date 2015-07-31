@@ -18,7 +18,7 @@ $s.listen;
 
 my $client = req;
 
-$client.send("GET / HTTP/1.0\r\n\r\n");
+$client.print("GET / HTTP/1.0\r\n\r\n");
 my $data;
 while (my $str = $client.recv) {
   $data ~= $str;

@@ -17,7 +17,7 @@ $s.register(sub ($request, $response, $n) {
 $s.listen;
 
 my $client = req;
-$client.send("GET / HTTP/1.0\r\n\r\n");
+$client.print("GET / HTTP/1.0\r\n\r\n");
 my $data = 0;
 while (my $str = $client.recv) {
   $data ~= $str;

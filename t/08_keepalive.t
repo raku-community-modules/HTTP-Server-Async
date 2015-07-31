@@ -20,7 +20,7 @@ $s.register(sub ($req, $res, $n) {
 
 $s.listen;
 my $r = req;
-$r.send("GET /a HTTP/1.0\r\nConnection: keep-alive\r\n\r\n");
+$r.print("GET /a HTTP/1.0\r\nConnection: keep-alive\r\n\r\n");
 my $data;
 while (my $u = $r.recv) {
   $data ~= $u;
@@ -29,7 +29,7 @@ while (my $u = $r.recv) {
 ok ($data.match(/ ^^ 'res1' $$ /) ?? True !! False), 'Testing for pipelined response #1';
 ok (!$data.match(/ ^^ 'res2' $$ /) ?? True !! False), 'Testing #1 for *only* #1';
 ok (!$data.match(/ ^^ 'improper' $$ /) ?? True !! False), 'Testing #1 for *only* #1';
-$r.send("GET /b HTTP/1.0\r\n\r\n");
+$r.print("GET /b HTTP/1.0\r\n\r\n");
 $data = '';
 while ($u = $r.recv) {
   $data ~= $u;

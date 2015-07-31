@@ -39,7 +39,7 @@ isa-ok $client, IO::Socket::INET;
 is $client.host, host, 'IO::Socket::INET correct host';
 is $client.port, port, 'IO::Socket::INET correct port';
 
-$client.send("GET / HTTP/1.0\r\n\r\n");
+$client.print("GET / HTTP/1.0\r\n\r\n");
 my $ret = '';
 my $recv;
 while (my $str = $client.recv) {
