@@ -1,9 +1,9 @@
 {
   "name"        : "HTTP::Server::Async",
-  "version"     : "0.1.0",
+  "version"     : "0.1.1",
   "description" : "Asynchronous Base HTTP Server",
   "auth"        : "github:tony-o",
-  "depends"     : [ "Pluggable" ],
+  "depends"     : [ ],
   "provides" : {
     "HTTP::Server::Async" : "lib/HTTP/Server/Async.pm6",  
     "HTTP::Server::Async::Request"  : "/lib/HTTP/Server/Async/Request.pm6",
