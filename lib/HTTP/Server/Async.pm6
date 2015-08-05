@@ -3,15 +3,17 @@ use HTTP::Server::Async::Request;
 use HTTP::Server::Async::Response;
 
 class HTTP::Server::Async does HTTP::Server {
-  has Int     $.port      = 1666;
-  has Str     $.ip        = '0.0.0.0';
-  has Channel $.requests .= new;
+  has Int     $.port          = 1666;
+  has Str     $.ip            = '0.0.0.0';
+  has Channel $.requests     .= new;
+  has Int     $.timeout is rw = 8;
 
-  has Supply $.socket is rw;
+  has Supply $.socket  is rw;
 
   has @.handlers;
   has @.afters;
   has @.middlewares;
+  has @!connects;
 
   method handler(Callable $sub) {
     @.handlers.push($sub);
@@ -25,20 +27,45 @@ class HTTP::Server::Async does HTTP::Server {
     @.middlewares.push($sub);
   }
 
+  method !timeout {
+    start {
+      loop {
+        sleep 1;
+        CATCH { default { .say; } }
+        for @!connects.grep({ now - $_<last-active> >= $.timeout }) {
+          CATCH { default { .say; } }
+          try $_<connection>.close;
+        }
+      };
+    };
+  }
+
+  method !reset-time($conn) {
+    for @!connects.grep({ $_<connection> eqv $conn }) {
+      $_<last-active> = now;
+    }
+  }
+
   method listen(Bool $block? = False) {
     my Promise $prom .=new;
     my Buf     $rn   .=new("\r\n\r\n".encode);
 
     self!responder;
+    self!timeout;
 
     $.socket = IO::Socket::Async.listen($.ip, $.port) or die "Failed to listen on $.ip:$.port";
     $.socket.tap(-> $conn {
       my Buf $data .=new;
       my Int $index = 0;
       my     $req   = Nil;
+      @!connects.push({
+        connection  => $conn,
+        last-active => now,
+      });
       
       $conn.bytes-supply.tap(-> $bytes {
         $data ~= $bytes;
+        self!reset-time($conn);
         while $index++ < $data.elems - 3 {
           $index--, last if $data[$index]   == $rn[0] &&
                             $data[$index+1] == $rn[1] &&
