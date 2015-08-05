@@ -9,8 +9,11 @@ plan 2;
 my $s = srv;
 
 my Str $timetest = time.Str;
-$s.middleware('HTTP::Server::Async::Plugins::Middleware::Inject');
-$s.register(sub ($req,$res,$n) {
+$s.middleware(sub ($req, $res){
+  $res.headers<XYZ> = 'ABC';  
+  return True;
+});
+$s.handler(sub ($req,$res) {
   $res.headers<Connection> = 'close';
   $res.close($timetest);
 });
@@ -28,3 +31,5 @@ $client.close;
 ok $data ~~ rx/^^ 'XYZ: ABC' $$/, 'Testing for XYZ Middleware Header';
 ok $data ~~ rx/^^ "$timetest" $$/, "Testing for $timetest";
 
+exit 0;
+# vi:syntax=perl6

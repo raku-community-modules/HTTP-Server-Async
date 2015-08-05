@@ -4,21 +4,18 @@ use lib 't/lib';
 use starter;
 use Test;
 
-plan 11;
+plan 7;
 
 my $s = srv;
-isa-ok $s, HTTP::Server::Async;
-is $s.responsestack.elems, 0, 'Response stack contains no elements yet';
 
-$s.register(sub ($req,$res,$n) {
+$s.handler(sub ($req,$res) {
   start {
     $res.write('buffered');
     sleep 2;
-    $n();
   };
 });
 
-$s.register(sub ($request, $response, $n) {
+$s.handler(sub ($request, $response) {
   $response.headers<Content-Type> = 'text/plain';
   $response.headers<Connection>   = 'close';
   $response.status = 200;
@@ -28,12 +25,9 @@ $s.register(sub ($request, $response, $n) {
     $response.close("Hello world!");
   };
 });
-ok $s.responsestack.elems, 'Response stack contains elements';
-isa-ok $s.responsestack[0], Sub;
 
 $s.listen;
 
- 
 my $client = req;
 isa-ok $client, IO::Socket::INET;
 is $client.host, host, 'IO::Socket::INET correct host';
@@ -56,5 +50,7 @@ ok $ret.match(/ ^^ 'HTTP/1.1 200 OK' $$ /), 'HTTP Status Code: 200';
 ok $ret.match(/ ^^ 'Content-Type: text/plain' $$ /), 'Content-Type';
 ok $ret.match(/ ^^ 'bufferedHello world!' $$ /), "Content: bufferedHello World!";
 ok $recv == 2, "Time between flush and write ~2";
+
+exit 0;
 
 # vi:syntax=perl6

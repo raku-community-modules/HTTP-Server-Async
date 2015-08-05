@@ -1,8 +1,9 @@
 class HTTP::Server::Async::Plugins::Middleware::Inject {
-  has Bool $.status is rw;
-
-  submethod BUILD(:$request, :$response, :$tap, :$connection) {
-    $response.headers<XYZ> = 'ABC';
-    $!status = False;
+  method bind($app) {
+    $app.middleware(sub ($req, $res) {
+      $response.headers<XYZ> = 'ABC';
+      $!status = False;
+    }
+    return True;
   }
 };

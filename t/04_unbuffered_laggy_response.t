@@ -8,18 +8,19 @@ plan 3;
 
 my $s = srv(:buffered(False));
 
-$s.register(sub ($request, $response, $n) {
+$s.listen;
+
+$s.handler(sub ($request, $response) {
+  $response.unbuffer;
   start { 
     $response.write('chunk 1');
     sleep 5;
-    $n();
   };
 });
-$s.register(sub ($request, $response, $n) {
+$s.handler(sub ($request, $response) {
   $response.headers<Connection> = 'close';
   $response.close('chunk 2');
 });
-$s.listen;
 
 my $client = req;
 $client.print("GET / HTTP/1.0\r\n\r\n");
@@ -35,5 +36,5 @@ while (my $str = $client.recv) {
   }
 }
 $client.close;
-
+exit 0;
 # vi:syntax=perl6

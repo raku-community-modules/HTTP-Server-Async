@@ -6,12 +6,14 @@ use Test;
 
 plan 1;
 
-my $s = srv(:buffered(False));
+my $s = srv;
 
-$s.register(sub ($request, $response, $n) {
+$s.handler(sub ($request, $response) {
+  $response.unbuffer;
   $response.headers<Connection> = 'close';
   $response.close('Hello');
 });
+
 $s.listen;
 
 my $client = req;
@@ -24,5 +26,6 @@ while (my $str = $client.recv) {
 }
 ok $data.match(/'Hello'/), 'Response';
 $client.close;
+exit 0;
 
 # vi:syntax=perl6

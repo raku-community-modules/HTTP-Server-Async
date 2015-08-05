@@ -12,7 +12,7 @@ my $s;
 sub host is export { $host; }
 sub port is export { $port; }
 sub srv(|opts) is export {
-  $s = HTTP::Server::Async.new(:$host, :$port, |opts) or die 'dead';
+  $s = HTTP::Server::Async.new(:ip($host), :$port, |opts) or die 'dead';
   return $s;
 }
 sub req is export {

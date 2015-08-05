@@ -6,14 +6,14 @@ use Test;
 
 plan 1;
 
-my $s = srv(:timeout(3));
+my $s = srv;
 
-$s.register(sub ($request, $response, $n) {
+$s.handler(sub ($request, $response) {
   sleep 10;
   $response.headers<Connection> = 'close';
   $response.close("Done");
-  $n();
 });
+
 $s.listen;
 
 my $client = req;
@@ -24,5 +24,5 @@ while (my $str = $client.recv) {
 }
 ok ! $data.match(/ 'Done' /), 'Shouldn\'t see "Done"';
 $client.close;
-
+exit 0;
 # vi:syntax=perl6
