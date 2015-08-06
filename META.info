@@ -3,7 +3,7 @@
   "version"     : "0.1.1",
   "description" : "Asynchronous Base HTTP Server",
   "auth"        : "github:tony-o",
-  "depends"     : [ ],
+  "depends"     : [ "HTTP::Server" ],
   "provides" : {
     "HTTP::Server::Async" : "lib/HTTP/Server/Async.pm6",  
     "HTTP::Server::Async::Request"  : "lib/HTTP/Server/Async/Request.pm6",
