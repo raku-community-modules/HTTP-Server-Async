@@ -29,7 +29,7 @@ my $data;
 while (my $str = $client.recv) {
   $data ~= $str;
 }
+$data.perl.say;
 $client.close;
 ok $data ~~ / "\r\n\r\nWikipedia in\r\n\r\nchunks" /, 'Test for chunked data echo';
-exit 0;
 # vi:syntax=perl6

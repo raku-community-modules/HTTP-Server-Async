@@ -122,7 +122,7 @@ class HTTP::Server::Async does HTTP::Server {
     if $req ~~ Nil || !( $req.^can('headers') && $req.headers.keys.elems ) {
       my @lines       = Buf.new($data[0..$index]).decode.lines;
       my ($m, $u, $v) = @lines.shift.match(/^(.+?)\s(.+)\s(HTTP\/.+)$/).list.map({ .Str });
-      my %h           = @lines.map({ .split(':', 2).map({.trim}) });
+      my %h           = %(@lines.map({ .split(':', 2).map({.trim}).Slip }).Slip);
 
       $req    = HTTP::Server::Async::Request.new(
                   :method($m), 

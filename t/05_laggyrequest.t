@@ -18,7 +18,7 @@ $s.listen;
 
 my $client = req;
 $client.print("GET / HTTP/1.0\r\n");
-sleep 10;
+sleep 5;
 $client.print("\r\n");
 my $data;
 while (my $str = $client.recv) {
@@ -26,6 +26,5 @@ while (my $str = $client.recv) {
 }
 ok $data.match(/'Hello'/), 'Response';
 $client.close;
-exit 0;
 
 # vi:syntax=perl6
