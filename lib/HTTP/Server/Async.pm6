@@ -168,9 +168,9 @@ class HTTP::Server::Async does HTTP::Server {
     } else {
       my $req-len = $req.header('Content-Length')[0] // ($data.elems - $index);
       if $data.elems - $req-len >= 0 {
-        $req.data     = Buf.new($data[0..$req-len]); 
+        $req.data     = Buf.new($data[0..$req-len].Slip); 
         $req.complete = True;
-        $data = Buf.new($data[$req-len..$data.elems]);
+        $data = Buf.new($data[$req-len..$data.elems].Slip);
       }
     }
     $.requests.send($req) if $req.^can('complete') && $req.complete;
