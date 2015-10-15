@@ -166,7 +166,7 @@ class HTTP::Server::Async does HTTP::Server {
         $i = 0;
       }
     } else {
-      my $req-len = $req.header('Content-Length')[0].value // ($data.elems - $index);
+      my $req-len = try { $req.header('Content-Length')[0].value } // ($data.elems - $index);
       if $data.elems - $req-len >= 0 {
         $req.data     = Buf.new($data[0..$req-len].Slip); 
         $req.complete = True;
