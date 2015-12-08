@@ -63,7 +63,7 @@ class HTTP::Server::Async does HTTP::Server {
         last-active => now,
       });
       
-      $conn.bytes-supply.tap(-> $bytes {
+      $conn.Supply(:bin).tap(-> $bytes {
         $data ~= $bytes;
         self!reset-time($conn);
         while $index++ < $data.elems - 3 {
