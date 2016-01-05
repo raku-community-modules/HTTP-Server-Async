@@ -156,8 +156,8 @@ class HTTP::Server::Async does HTTP::Server {
                    $data[$i+1] != $rn[1] &&
                    $i + 1 < $data.elems;
         last if $i + 1 >= $data.elems;
-
-        $bytes = :16($data.subbuf(0,$i).decode);
+                                    
+		$bytes = :16($data.subbuf(0,$i).decode.trim);
         last if $data.elems < $i + $bytes;
         { $req.complete = True; last; } if $bytes == 0;
         $i+=2;
