@@ -1,27 +1,8 @@
-language: perl
-perl:
-    - '5.20'
-env:
-    - BACKEND=moar
-    - BACKEND=jvm
-matrix:
-    allow_failures:
-        - env: BACKEND=jvm
-    fast_finish: true
+language: perl6
 sudo: false
-before_install:
-    - git clone https://github.com/rakudo/rakudo.git $HOME/rakudo
-    - cd $HOME/rakudo
-    - 'if [[ $BACKEND == "moar" ]]; then perl Configure.pl --gen-moar --gen-nqp --backends=$BACKEND; fi'
-    - 'if [[ $BACKEND == "jvm" ]]; then perl Configure.pl --gen-nqp --backends=$BACKEND; fi'
-    - make install
-    - export PATH=$HOME/rakudo/install/bin:$PATH
-    - cd $TRAVIS_BUILD_DIR
-    # install dependencies the old fashioned way
-    - git clone https://github.com/tony-o/perl6-http-server.git TTS
-    - cp -r TTS/lib/* lib/
+perl6:
+    - latest
 install:
-    # need at least 1 statement in 'install'
-    - perl6 -v
-script:
-    - prove -v -e 'perl6 -Ilib' t/
+    - rakudobrew build-panda
+    - panda installdeps .
+

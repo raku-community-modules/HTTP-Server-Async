@@ -2,6 +2,7 @@
   "name"        : "HTTP::Server::Async",
   "version"     : "0.1.1",
   "description" : "Asynchronous Base HTTP Server",
+  "authors"     : [ "tony-o", "Wenzel P. P. Peppmeyer" ],
   "auth"        : "github:tony-o",
   "depends"     : [ "HTTP::Server" ],
   "provides" : {

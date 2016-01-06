@@ -63,9 +63,9 @@ class HTTP::Server::Async does HTTP::Server {
         last-active => now,
       });
       
-      $conn.bytes-supply.tap(-> $bytes {
-        $data ~= $bytes;
-        self!reset-time($conn);
+      $conn.Supply(:bin).tap(-> $bytes {
+        $data = $data ~ $bytes;
+		self!reset-time($conn);
         while $index++ < $data.elems - 3 {
           $index--, last if $data[$index]   == $rn[0] &&
                             $data[$index+1] == $rn[1] &&
@@ -133,7 +133,7 @@ class HTTP::Server::Async does HTTP::Server {
                   :response(HTTP::Server::Async::Response.new(:$connection)));
       $req.data .=new;
       $index += 4;
-      $data   = Buf.new($data[$index+1..$data.elems]);
+      $data   = Buf.new($data[$index+1..$data.elems-1]);
       $index  = 0;
       for @.middlewares -> $m {
         try {
