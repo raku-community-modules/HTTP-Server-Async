@@ -27,7 +27,7 @@ $s.handler(sub ($request, $response) {
   $response.close("world!"); #keeps a promise in the response and ends the server handler processing
 });
 
-$s.listen;
+$s.listen(True);
 ```
 
 ##Methods
@@ -56,9 +56,6 @@ processing using `$request.connection` to gain control of the socket.
 
 ###.listen ( Bool $block? = False ) 
 Starts the server and does *not* block 
-
-###.block
-Will block the main loop until the server stops 
 
 ##HTTP::Server::Async::Request
 
