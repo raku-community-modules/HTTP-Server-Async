@@ -1,4 +1,4 @@
-use HTTP::Server;
+use HTTP::Server:auth<github:tony-o>;
 use HTTP::Server::Async::Request;
 use HTTP::Server::Async::Response;
 
