@@ -64,8 +64,8 @@ class HTTP::Server::Async does HTTP::Server {
       });
       
       $conn.Supply(:bin).tap(-> $bytes {
-        $data = $data ~ $bytes;
-		self!reset-time($conn);
+        $data ~= $bytes;
+        self!reset-time($conn);
         while $index++ < $data.elems - 3 {
           $index--, last if $data[$index]   == $rn[0] &&
                             $data[$index+1] == $rn[1] &&
