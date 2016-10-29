@@ -1,4 +1,4 @@
-use HTTP::Response;
+use HTTP::Response:auth<github:tony-o>;
 
 class HTTP::Server::Async::Response does HTTP::Response {
   has @!buffer;
