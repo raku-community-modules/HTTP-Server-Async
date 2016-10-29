@@ -96,7 +96,7 @@ Response headers to be sent, accessed directly.  Modifying these after writing t
 ###Methods
 
 ####write
-Write data to the sucket, will call the appropriate method for the socket (Str = $connection.write, anything else is $connection.send)
+Write data to the socket, will call the appropriate method for the socket (Str = $connection.write, anything else is $connection.send)
 
 ####close
 Close takes optional parameter of data to send out.  Will call `write` if a parameter is provided.  Closes the socket, writes headers if the response is buffered, etc 
