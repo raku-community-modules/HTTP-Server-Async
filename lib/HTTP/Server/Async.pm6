@@ -34,7 +34,7 @@ class HTTP::Server::Async does HTTP::Server {
         CATCH { default { .say; } }
         for @!connects.grep({ now - $_<last-active> >= $.timeout }) {
           CATCH { default { .say; } }
-          try $_<connection>.close;
+          #try $_<connection>.close; 
         }
       };
     };
