@@ -122,7 +122,22 @@ class HTTP::Server::Async does HTTP::Server {
     if $req ~~ Nil || !( $req.^can('headers') && $req.headers.keys.elems ) {
       my @lines       = Buf.new($data[0..$index]).decode.lines;
       my ($m, $u, $v) = @lines.shift.match(/^(.+?)\s(.+)\s(HTTP\/.+)$/).list.map({ .Str });
-      my %h           = %(@lines.map({ .split(':', 2).map({.trim}).Slip }).Slip);
+      my %h;
+      my $last-key = '';
+      for @lines -> $line {
+        if $line ~~ /^\s/ && $last-key {
+          %h{$last-key} ~= $line.trim;
+        } else { 
+          my ($k,$v) = $line.split(':', 2).map({.trim});
+          $last-key = $k;
+          if %h{$k}:exists {
+            %h{$k} = [%h{$k},] if %h{$k} !~~ Array;
+            %h{$k}.push($v);
+          } else {
+            %h{$k} = $v;
+          }
+        }
+      }
 
       $req    = HTTP::Server::Async::Request.new(
                   :method($m), 
