@@ -1,28 +1,28 @@
 #!/usr/bin/env perl6
 
-use lib 'lib';
-use lib '../lib';
+use lib $*PROGRAM.parent.parent.child('lib').Str;
+
 use HTTP::Server::Async;
+
 
 my $server = HTTP::Server::Async.new;
 
-$server.register(sub ($request,$response, $next) {
-  ('[INFO] ' ~ $request.perl).say;
+$server.handler(sub ($request,$response) {
   try {
     if $request.uri.match(/ ^ '/' [ '?' | $ ] /) {
       '[INFO] Serving /'.say;
       $response.write($request.uri);
       $response.write($request.data);
       $response.close;
-      return;
+      return False;
     }
     CATCH { .say; };
   }
   'next'.say;
-  $next();
+  True;
 });
 
-$server.register(sub ($request,$response,$next) {
+$server.handler(sub ($request,$response) {
   '[INFO] Serving <404>'.say;
   try {
     $response.status = 404;
@@ -30,7 +30,7 @@ $server.register(sub ($request,$response,$next) {
     $response.close;
     CATCH { .say; }
   };
+  False;
 });
 
-$server.listen;
-$server.block;
+$server.listen(True);
