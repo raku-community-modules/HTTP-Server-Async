@@ -3,6 +3,7 @@
 use lib 't/lib';
 use starter;
 use Test;
+use HTTP::Server::Async;
 
 plan 12;
 
