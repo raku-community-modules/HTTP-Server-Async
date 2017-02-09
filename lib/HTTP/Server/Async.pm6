@@ -40,7 +40,7 @@ class HTTP::Server::Async does HTTP::Server {
           CATCH { default { .say; } }
           try {
             $_<closedorclosing> = True;
-            $_<connection>.write(''); #https://irclog.perlgeek.de/perl6/2017-02-09#i_14073278
+            $_<connection>.write(Blob.new); #https://irclog.perlgeek.de/perl6/2017-02-09#i_14073278
             $_<connection>.close; 
           };
         }
