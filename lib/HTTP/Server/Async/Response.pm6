@@ -66,6 +66,7 @@ class HTTP::Server::Async::Response does HTTP::Response {
     %.headers<Content-Length> = $cl;
     $.flush;
     try {
+      $.connection.write('');
       $.connection.close;# unless (%.headers<Connection>.index('keep-alive') // -1) > -1 || $force;
     };
   }

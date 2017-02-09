@@ -7,8 +7,6 @@ class HTTP::Server::Async does HTTP::Server {
   has Str      $.ip            = '0.0.0.0';
   has Channel  $.requests     .= new;
   has Int      $.timeout is rw = 8;
-  has Supplier $!timeout-supplier;
-  has Supply   $!timeout-supply;
 
   has Supply $.socket  is rw;
 
@@ -30,14 +28,21 @@ class HTTP::Server::Async does HTTP::Server {
   }
 
   method !timeout {
+    my Lock $l .=new;
     start {
       loop {
         sleep 1;
         CATCH { default { .say; } }
+        $l.protect({
+          @!connects = @!connects.grep({ !$_<closedorclosing>.defined });
+        });
         for @!connects.grep({ now - $_<last-active> >= $.timeout }) {
           CATCH { default { .say; } }
-          #try $_<connection>.close; 
-          try $!timeout-supplier.emit($_<connection>);
+          try {
+            $_<closedorclosing> = True;
+            $_<connection>.write(''); #https://irclog.perlgeek.de/perl6/2017-02-09#i_14073278
+            $_<connection>.close; 
+          };
         }
       };
     };
@@ -55,12 +60,6 @@ class HTTP::Server::Async does HTTP::Server {
 
     self!responder;
     self!timeout;
-
-    $!timeout-supplier .=new unless $!timeout-supplier.defined;
-    $!timeout-supply    = $!timeout-supplier.Supply;
-    $!timeout-supply.tap(-> $conn {
-      try $conn.close;
-    });
 
     $.socket = IO::Socket::Async.listen($.ip, $.port) or die "Failed to listen on $.ip:$.port";
     $.socket.tap(-> $conn {
