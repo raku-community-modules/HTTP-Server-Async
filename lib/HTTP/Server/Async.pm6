@@ -129,7 +129,8 @@ class HTTP::Server::Async does HTTP::Server {
     $req = Nil if $req !~~ Nil && $req.^can('complete') && $req.complete;
     if $req ~~ Nil || !( $req.^can('headers') && $req.headers.keys.elems ) {
       my @lines       = Buf.new($data[0..$index]).decode.lines;
-      my ($m, $u, $v) = @lines.shift.match(/^(.+?)\s(.+)\s(HTTP\/.+)$/).list.map({ .Str });
+      return unless @lines[0].match(/^(.+?)\s(.+)\s(HTTP\/.+)$/);
+      my ($m, $u, $v) = (@lines.shift.match(/^(.+?)\s(.+)\s(HTTP\/.+)$/) // []).list.map({ .Str });
       my %h;
       my $last-key = '';
       for @lines -> $line {
@@ -182,7 +183,11 @@ class HTTP::Server::Async does HTTP::Server {
 
         $bytes = :16($data.subbuf(0,$i).decode);
         last if $data.elems < $i + $bytes;
-        { $req.complete = True; last; } if $bytes == 0;
+        if $bytes == 0 { 
+          try $data .=subbuf(3);
+          $req.complete = True;
+          last; 
+        } 
         $i+=2;
         $req.data ~= $data.subbuf($i, $i+$bytes-3);
         try $data .=subbuf($i+$bytes+2);
