@@ -57,7 +57,6 @@ class HTTP::Server::Async::Response does HTTP::Response {
   method close($data?, :$force? = False) {
     try {
       if Any !~~ $data { 
-        'write'.say;
         $.write($data);
       }
     };
