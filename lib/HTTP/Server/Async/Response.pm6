@@ -23,7 +23,7 @@ class HTTP::Server::Async::Response does HTTP::Response {
   method unbuffer {
     return True unless $!buffered;
     return try {
-      CATCH { default { return False; } }
+      CATCH { default { .say; return False; } }
       $!buffered = False;
       $.flush;
       return True;
@@ -36,7 +36,6 @@ class HTTP::Server::Async::Response does HTTP::Response {
   }
 
   method flush {
-    return unless $!buffered;
     self!sendheaders(True);
     for @!buffer -> $buff {
       try await $.connection.write($buff);
@@ -55,6 +54,7 @@ class HTTP::Server::Async::Response does HTTP::Response {
   }
 
   method close($data?, :$force? = False) {
+    return if $!closed;
     try {
       if Any !~~ $data { 
         $.write($data);
@@ -67,10 +67,10 @@ class HTTP::Server::Async::Response does HTTP::Response {
     }
     %.headers<Content-Length> = $cl;
     $.flush;
-    $!closed = True;
     try {
-      $.connection.write(Blob.new);
-      $.connection.close unless %.headers<Connection>.index('keep-alive') || $force;
+      await $.connection.write(Blob.new);
+      $.connection.close and ($!closed = True) 
+        unless %.headers<Connection>.index('keep-alive') || $force;
     };
   }
 
