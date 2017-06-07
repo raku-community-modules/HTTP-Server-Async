@@ -11,8 +11,8 @@ Asynchronous HTTP server.
 * Simple response handling
 
 ## Doesn't handle
-* Route handling
-* File transfers
+* ~~Route handling~~ (See [`HTTP::Server::Router`](https://github.com/tony-o/perl6-http-server-router))
+* ~~File transfers~~
 
 ## Example
 ```perl6
