@@ -1,7 +1,7 @@
 {
   "perl"        : "6.*",
   "name"        : "HTTP::Server::Async",
-  "version"     : "0.1.7",
+  "version"     : "0.1.8",
   "description" : "Asynchronous Base HTTP Server",
   "authors"     : [ "tony-o" ],
   "auth"        : "github:tony-o",
