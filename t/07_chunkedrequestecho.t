@@ -26,7 +26,7 @@ for @chunks -> $chunk {
 }
 
 my $data;
-while (my $str = $client.recv) {
+while (my $str = try $client.recv) {
   $data ~= $str;
 }
 $client.close;

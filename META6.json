@@ -2,7 +2,7 @@
   "perl"        : "6.*",
   "name"        : "HTTP::Server::Async",
   "license"     : "Artistic-2.0",
-  "version"     : "0.1.5",
+  "version"     : "0.1.8",
   "description" : "Asynchronous Base HTTP Server",
   "authors"     : [ "tony-o" ],
   "auth"        : "github:tony-o",

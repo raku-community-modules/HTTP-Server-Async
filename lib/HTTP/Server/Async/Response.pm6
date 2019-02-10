@@ -4,6 +4,7 @@ class HTTP::Server::Async::Response does HTTP::Response {
   has @!buffer;
   has Bool $!buffered = True;
   has Bool $!senthead = False;
+  has Bool $!closed   = False;
 
   method !sendheaders (Bool $lastcall? = False) {
     return if $!senthead || (! $lastcall && $!buffered);
@@ -22,7 +23,7 @@ class HTTP::Server::Async::Response does HTTP::Response {
   method unbuffer {
     return True unless $!buffered;
     return try {
-      CATCH { default { return False; } }
+      CATCH { default { .say; return False; } }
       $!buffered = False;
       $.flush;
       return True;
@@ -37,7 +38,7 @@ class HTTP::Server::Async::Response does HTTP::Response {
   method flush {
     self!sendheaders(True);
     for @!buffer -> $buff {
-      await $.connection.write($buff);
+      try await $.connection.write($buff);
     }
     @!buffer = Array.new;
   }
@@ -53,6 +54,7 @@ class HTTP::Server::Async::Response does HTTP::Response {
   }
 
   method close($data?, :$force? = False) {
+    return if $!closed;
     try {
       if Any !~~ $data { 
         $.write($data);
@@ -66,8 +68,11 @@ class HTTP::Server::Async::Response does HTTP::Response {
     %.headers<Content-Length> = $cl;
     $.flush;
     try {
-      $.connection.write(Blob.new);
-      $.connection.close;# unless (%.headers<Connection>.index('keep-alive') // -1) > -1 || $force;
+      await $.connection.write(Blob.new);
+      $.connection.close and ($!closed = True) 
+        unless %.headers<Connection>.index('keep-alive') || $force;
     };
   }
+
+  method closed { $!closed; }
 };

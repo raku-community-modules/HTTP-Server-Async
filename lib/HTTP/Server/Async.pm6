@@ -48,6 +48,16 @@ class HTTP::Server::Async does HTTP::Server {
     };
   }
 
+  method !remove-timeout($conn) {
+    for @!connects.grep({ $_<connection> eqv $conn }) {
+      try {
+        $_<closedorclosing> = True;
+        $_<connection>.write(Blob.new);
+        $_<connection>.close;
+      };
+    }
+  }
+
   method !reset-time($conn) {
     for @!connects.grep({ $_<connection> eqv $conn }) {
       $_<last-active> = now;
@@ -74,14 +84,15 @@ class HTTP::Server::Async does HTTP::Server {
       $conn.Supply(:bin).tap(-> $bytes {
         $data ~= $bytes;
         self!reset-time($conn);
-        while $index++ < $data.elems - 3 {
+        while $index++ < $data.elems - 4 {
           $index--, last if $data[$index]   == $rn[0] &&
                             $data[$index+1] == $rn[1] &&
                             $data[$index+2] == $rn[2] &&
                             $data[$index+3] == $rn[3];
         }
 
-        self!parse($data, $index, $req, $conn) if $index != $data.elems - 3 || $req.^can('complete');
+        self!parse($data, $index, $req, $conn) 
+          if $index != $data.elems - 3 || $req.^can('complete');
         CATCH { default { .say; } }
       });
       CATCH { default { .say; } }
@@ -99,6 +110,7 @@ class HTTP::Server::Async does HTTP::Server {
         CATCH { default { .say; } }
         my $req = $.requests.receive;
         my $res = $req.response;
+        my $prm;
         for @.handlers -> $h {
           try {
             CATCH {
@@ -107,7 +119,8 @@ class HTTP::Server::Async does HTTP::Server {
               }
             }
             my $r = $h.($req, $res);
-            last if self!rc($r);
+            $prm  = self!rc($r);
+            last if $prm;
           };
         }
 
@@ -121,6 +134,10 @@ class HTTP::Server::Async does HTTP::Server {
             $a.($req, $res);
           }
         }
+        
+        $res.close(:force(True)) and self!remove-timeout($res.connection) 
+          if $prm || 
+             ($req.header('Connection')[0]<Connection> // '').lc ne 'keep-alive';
       };
     };
   }
@@ -201,7 +218,8 @@ class HTTP::Server::Async does HTTP::Server {
         $data = Buf.new($data[$req-len..$data.elems].Slip);
       }
     }
-    $.requests.send($req) if $req.^can('complete') && $req.complete;
+    $.requests.send($req)
+      if $req.^can('complete') && $req.complete;
   }
 
   method !rc($r) {
