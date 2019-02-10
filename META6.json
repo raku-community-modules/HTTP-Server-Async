@@ -2,11 +2,11 @@
   "perl"        : "6.*",
   "name"        : "HTTP::Server::Async",
   "license"     : "Artistic-2.0",
-  "version"     : "0.1.8",
+  "version"     : "0.1.9",
   "description" : "Asynchronous Base HTTP Server",
   "authors"     : [ "tony-o" ],
   "auth"        : "github:tony-o",
-  "depends"     : [ "HTTP::Server" ],
+  "depends"     : [ "HTTP::Roles" ],
   "provides" : {
     "HTTP::Server::Async" : "lib/HTTP/Server/Async.pm6",  
     "HTTP::Server::Async::Request"  : "lib/HTTP/Server/Async/Request.pm6",

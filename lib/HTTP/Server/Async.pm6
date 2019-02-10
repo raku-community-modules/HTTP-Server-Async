@@ -1,8 +1,8 @@
-use HTTP::Server:auth<github:tony-o>;
+use HTTP::Server::Role;
 use HTTP::Server::Async::Request;
 use HTTP::Server::Async::Response;
 
-class HTTP::Server::Async does HTTP::Server {
+class HTTP::Server::Async does HTTP::Server::Role {
   has Int      $.port          = 1666;
   has Str      $.ip            = '0.0.0.0';
   has Channel  $.requests     .= new;
