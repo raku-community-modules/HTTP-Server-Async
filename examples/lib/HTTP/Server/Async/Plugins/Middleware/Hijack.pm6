@@ -1,10 +1,6 @@
-class HTTP::Server::Async::Plugins::Middleware::Hijack {
-  has $.status is rw;
+unit module HTTP::Server::Async::Plugins::Middleware::Hijack;
 
-  submethod BUILD(:$connection, :$request, :$response, :$tap) {
-    try {
-      $response.close("Hijacked.");
-    };
-    $!status = True;
-  }
-};
+sub hijack($request, $response) is export {
+  $response.close('Hijacked.');
+  False;
+}
