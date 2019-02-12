@@ -1,6 +1,6 @@
 # HTTP::Server::Async
 
-[![Build Status](https://travis-ci.org/tony-o/perl6-http-server-async.svg?branch=master)](https://travis-ci.org/tony-o/perl6-http-server-async)
+[![Build Status](https://travis-ci.org/perl6/perl6-http-server-async.svg?branch=master)](https://travis-ci.org/perl6/perl6-http-server-async)
 
 Asynchronous HTTP server.  
 
