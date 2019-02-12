@@ -1,16 +1,20 @@
 {
   "perl"        : "6.*",
   "name"        : "HTTP::Server::Async",
-  "license"     : "Artistic-2.0",
   "version"     : "0.1.9",
-  "description" : "Asynchronous Base HTTP Server",
-  "authors"     : [ "tony-o" ],
   "auth"        : "github:tony-o",
+  "description" : "Asynchronous Base HTTP Server",
+  "license"     : "Artistic-2.0",
+  "authors"     : [ "tony-o" ],
   "depends"     : [ "HTTP::Roles" ],
+  "support"     : {
+      "source": "git://github.com/perl6-community-modules/perl6-http-server-async.git",
+      "bugtracker" : "https://github.com/perl6-community-modules/perl6-http-server-async/issues"
+  },
   "provides" : {
     "HTTP::Server::Async" : "lib/HTTP/Server/Async.pm6",  
     "HTTP::Server::Async::Request"  : "lib/HTTP/Server/Async/Request.pm6",
     "HTTP::Server::Async::Response" : "lib/HTTP/Server/Async/Response.pm6"
   },
-  "source-url"  : "git://github.com/perl6/perl6-http-server-async.git"
+  "source-url"  : "git://github.com/perl6-community-modules/perl6-http-server-async.git"
 } 
