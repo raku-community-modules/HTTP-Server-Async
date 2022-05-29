@@ -1,108 +1,156 @@
-# HTTP::Server::Async
+[![Actions Status](https://github.com/raku-community-modules/HTTP-Server-Async/actions/workflows/test.yml/badge.svg)](https://github.com/raku-community-modules/HTTP-Server-Async/actions)
 
-[![Build Status](https://travis-ci.org/perl6-community-modules/perl6-http-server-async.svg?branch=master)](https://travis-ci.org/perl6-community-modules/perl6-http-server-async)
+NAME
+====
 
-Asynchronous HTTP server.  
+HTTP::Server::Async - Asynchronous Base HTTP Server
 
-## Currently handles:
-* Parsing Headers
-* Chunked Transfer
-* Hooks for middleware or route handling
-* Simple response handling
+SYNOPSIS
+========
 
-## Doesn't handle
-* ~~Route handling~~ (See [`HTTP::Server::Router`](https://github.com/tony-o/perl6-http-server-router))
-* ~~File transfers~~
-
-## Example
-```perl6
+```raku
 use HTTP::Server::Async;
 
 my $s = HTTP::Server::Async.new;
 
-$s.handler(sub ($request, $response) {
-  $response.headers<Content-Type> = 'text/plain';
-  $response.status = 200;
-  $response.write("Hello ");
-  $response.close("world!"); #keeps a promise in the response and ends the server handler processing
-});
+$s.handler:  -> $request, $response {
+    $response.headers<Content-Type> = 'text/plain';
+    $response.status = 200;
+    $response.write("Hello ");
+    # keeps a promise in the response and ends the server handler processing
+    $response.close("world!");
+}
 
 $s.listen(True);
 ```
 
-## Methods
+DESCRIPTION
+===========
 
-### .new
-`:port` - port to listen on
-`:host` - ip to listen on
-`:buffered` - Boolean value for whether responses should be buffered or not
+HTTP::Server::Async provides an implementation of an HTTP server, based on the roles provided by `HTTP::Roles`.
 
-### .handler ( Callable($request, $response) )
-Any Callable passed to this method is called in the order it was registered on every 
-incoming request.  Any method/sub registered with the server should return `True` to 
-continue processing.  A `False` value will discontinue processing. Alternatively a 
-promise can be returned, if the promise is broken then the server will discontinue,
-if the promise is kept then processing will continue. 
+It currently handles:
 
-Callable will receive two parameters from the server, a `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response`.  More about the `Response` and `Request` object below.
+  * Parsing Headers
 
-Note that the server will wait for the request body to be complete before calling `handler` subs.
+  * Chunked Transfer
 
+  * Hooks for middleware or route handling
 
-### .middleware ( Callable($request, $response) )
-The same as the `handler` except will *NOT* wait for a complete request body. The
-middleware can hijack the connection by explicitly returning `False` and continuing
-processing using `$request.connection` to gain control of the socket.
+  * Simple response handling
 
-### .listen ( Bool $block? = False ) 
-Starts the server and does *not* block 
+It does **not** handle:
 
-## HTTP::Server::Async::Request
+  * ~~Route handling~~ (See [`HTTP::Server::Router`](https://github.com/tony-o/perl6-http-server-router))
 
-This handles the parsing of the incoming request
+  * ~~File transfers~~
+
+CLASSES
+=======
+
+HTTP::Server::Async
+-------------------
+
+### new
+
+Takes these named arguments to return an instantiated object:
+
+  * :port - port to listen on
+
+  * :host - IP number to listen on
+
+  * :buffered - whether responses should be buffered or not (Bool)
+
+### handler
+
+Any `Callable` passed to this method is registered to be called on every incoming request in the order in which they were registered.
+
+Any registered `Callable` should return `True` to continue processing. A `False` value will discontinue processing of the request. Alternatively a `Promise` can be returned: if the `Promise` is broken then the server will discontinue, if the promise is kept then processing will continue. 
+
+The `Callable` will receive two parameters from the server, an `HTTP::Server::Async::Request` and a `HTTP::Server::Async::Response` object. More about the `Response` and `Request` object below.
+
+Note that the server will wait for the request body to be complete before calling `Callable` registered with `handler`.
+
+### middleware
+
+The same as the `handler` except will **NOT** wait for a complete request body. The middleware can hijack the connection by explicitly returning `False` and continuing processing using `$request.connection` to gain control of the socket.
+
+### listen
+
+Starts the server and does **not** block, unless called with a `True` value.
+
+HTTP::Server::Async::Request
+----------------------------
+
+This handles the parsing of an incoming request.
 
 ### Attributes
 
-#### $.method 
-GET/PUT/POST/etc
+#### method
 
-#### %.headers
-Key/value pair containing the header values
+GET/PUT/POST/etc.
 
-#### $.uri
-Requested resource
+#### headers
 
-#### $.version
-`HTTP/1.1` or `HTTP/1.0` (or whatever was in the request)
+hash with Key/value pair containing the header values.
 
-#### $.data
-String containing the data included with the request
+#### uri
 
-## HTTP::Server::Async::Response
+Requested resource.
 
-Response object, handles writing and closing the socket
+#### version
+
+HTTP/1.X (or whatever was in the request).
+
+#### data
+
+String containing the data included with the request.
+
+HTTP::Server::Async::Response
+-----------------------------
+
+Response object, handles writing and closing the socket.
 
 ### Attributes
 
-#### $.buffered (Bool) = True
-Whether or not the response object should buffer the response and write on close, or write directly to the socket
+#### buffered
 
-#### $.status (Int)
-Set the status of the response, uses HTTP status codes.  See [here](http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html) for more info
+Whether or not the response object should buffer the response and write on close, or write directly to the socket.
 
-#### %.headers
-Response headers to be sent, accessed directly.  Modifying these after writing to the socket will have no effect on the response unless the `$.buffered` is set to True
+#### status
+
+Set the status of the response, uses HTTP status codes. See [RFC2616](http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html) for more information. Defaults to 200.
+
+#### headers
+
+Hash with response headers to be sent, accessed directly. Modifying these after writing to the socket will have no effect on the response unless the `buffered` is set to True.
 
 ### Methods
 
 #### write
-Write data to the socket, will call the appropriate method for the socket (Str = $connection.write, anything else is $connection.send)
+
+Write data to the socket, will call the appropriate method for the socket (`$connection.write` for `Str`s, anything else is `$connection.send`)
 
 #### close
-Close takes optional parameter of data to send out.  Will call `write` if a parameter is provided.  Closes the socket, writes headers if the response is buffered, etc 
 
-## Closing Credits
+Close takes optional parameter of data to send out. Will call `write` if a parameter is provided. Closes the socket, writes headers if the response is buffered, etc.
 
-thanks to ugexe, btyler, jnthn, and timotimo for helping figure out bugs, answer a bunch of questions, etc
+CREDITS
+=======
 
+Thanks to ugexe, btyler, jnthn, and timotimo for helping figure out bugs, answer a bunch of questions, etc.
+
+AUTHOR
+======
+
+Tony O'Dell
+
+COPYRIGHT AND LICENSE
+=====================
+
+Copyright 2014 - 2019 Tony O'Dell
+
+Copyright 2020 - 2022 Raku Community
+
+This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 

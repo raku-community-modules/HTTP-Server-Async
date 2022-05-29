@@ -1,29 +1,28 @@
-#!/usr/bin/env perl6
+use Test;
 
 use lib 't/lib';
 use starter;
-use Test;
 
 plan 7;
 
 my $s = srv;
 
 $s.handler(sub ($req,$res) {
-  start {
-    $res.write('buffered');
-    sleep 2;
-  };
+    start {
+        $res.write('buffered');
+        sleep 2;
+    };
 });
 
 $s.handler(sub ($request, $response) {
-  $response.headers<Content-Type> = 'text/plain';
-  $response.headers<Connection>   = 'close';
-  $response.status = 200;
-  $response.unbuffer;
-  start {
-    sleep 2;
-    $response.close("Hello world!");
-  };
+    $response.headers<Content-Type> = 'text/plain';
+    $response.headers<Connection>     = 'close';
+    $response.status = 200;
+    $response.unbuffer;
+    start {
+        sleep 2;
+        $response.close("Hello world!");
+    };
 });
 
 $s.listen;
@@ -36,14 +35,14 @@ is $client.port, port, 'IO::Socket::INET correct port';
 $client.print("GET / HTTP/1.0\r\n\r\n");
 my $ret = '';
 my $recv;
-while (my $str = $client.recv) {
-  if ($str.match(/ ^^ buffered $$ /)) {
-    $recv = time;
-  }
-  if ($str.match(/ ^^ 'Hello world!' $$ /)) {
-    $recv = time - $recv;
-  } 
-  $ret ~= $str;
+while $client.recv -> $str {
+    if ($str.match(/ ^^ buffered $$ /)) {
+        $recv = time;
+    }
+    if ($str.match(/ ^^ 'Hello world!' $$ /)) {
+        $recv = time - $recv;
+    } 
+    $ret ~= $str;
 }
 $client.close;
 ok $ret.match(/ ^^ 'HTTP/1.1 200 OK' $$ /), 'HTTP Status Code: 200';
@@ -51,6 +50,4 @@ ok $ret.match(/ ^^ 'Content-Type: text/plain' $$ /), 'Content-Type';
 ok $ret.match(/ ^^ 'bufferedHello world!' $$ /), "Content: bufferedHello World!";
 ok $recv == 2, "Time between flush and write ~2";
 
-exit 0;
-
-# vi:syntax=perl6
+# vim: expandtab shiftwidth=4

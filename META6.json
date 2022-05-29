@@ -1,20 +1,32 @@
 {
-  "perl"        : "6.*",
-  "name"        : "HTTP::Server::Async",
-  "version"     : "0.1.9",
-  "auth"        : "github:tony-o",
-  "description" : "Asynchronous Base HTTP Server",
-  "license"     : "Artistic-2.0",
-  "authors"     : [ "tony-o" ],
-  "depends"     : [ "HTTP::Roles" ],
-  "support"     : {
-      "source": "git://github.com/raku-community-modules/HTTP-Server-Async.git",
-      "bugtracker" : "https://github.com/raku-community-modules/HTTP-Server-Async/issues"
+  "auth": "github:tony-o",
+  "authors": [
+    "Tony O'Dell"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+    "HTTP::Roles"
+  ],
+  "description": "Asynchronous Base HTTP Server",
+  "license": "Artistic-2.0",
+  "name": "HTTP::Server::Async",
+  "perl": "6.*",
+  "provides": {
+    "HTTP::Server::Async": "lib/HTTP/Server/Async.rakumod",
+    "HTTP::Server::Async::Request": "lib/HTTP/Server/Async/Request.rakumod",
+    "HTTP::Server::Async::Response": "lib/HTTP/Server/Async/Response.rakumod"
   },
-  "provides" : {
-    "HTTP::Server::Async" : "lib/HTTP/Server/Async.pm6",  
-    "HTTP::Server::Async::Request"  : "lib/HTTP/Server/Async/Request.pm6",
-    "HTTP::Server::Async::Response" : "lib/HTTP/Server/Async/Response.pm6"
+  "resources": [
+  ],
+  "source-url": "git://github.com/raku-community-modules/HTTP-Server-Async.git",
+  "support": {
+    "bugtracker": "https://github.com/raku-community-modules/HTTP-Server-Async/issues",
+    "source": "git://github.com/raku-community-modules/HTTP-Server-Async.git"
   },
-  "source-url"  : "git://github.com/raku-community-modules/HTTP-Server-Async.git"
-} 
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.2"
+}

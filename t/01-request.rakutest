@@ -1,9 +1,8 @@
-#!/usr/bin/env perl6
+use Test;
+use HTTP::Server::Async;
 
 use lib 't/lib';
 use starter;
-use Test;
-use HTTP::Server::Async;
 
 plan 12;
 
@@ -12,28 +11,27 @@ isa-ok $s, HTTP::Server::Async;
 is $s.middlewares.elems, 0, 'Response stack contains no elements yet';
 is $s.handlers.elems, 0, 'Response stack contains no elements yet';
 
-$s.handler(sub ($req,$res) {
-  start {
-    sleep 2;
-  };
-});
+$s.handler: -> $req,$res {
+    start {
+        sleep 2;
+    }
+}
 
-$s.handler(sub ($request, $response) {
-  $response.headers<Content-Type> = 'text/plain';
-  $response.headers<Connection>   = 'close';
-  $response.status = 200;
-  $response.write("");
-  $response.close("Hello world!");
-});
+$s.handler: sub ($request, $response) {
+    $response.headers<Content-Type> = 'text/plain';
+    $response.headers<Connection>     = 'close';
+    $response.status = 200;
+    $response.write("");
+    $response.close("Hello world!");
+}
 ok $s.handlers.elems, 'Response stack contains elements';
-isa-ok $s.handlers[0], Sub;
+isa-ok $s.handlers[0], Callable;
 
 start { 
-  $s.listen; 
-};
+    $s.listen; 
+}
 
 sleep 1;
-
 
 my $client = req;
 isa-ok $client, IO::Socket::INET;
@@ -43,12 +41,13 @@ is $client.port, port, 'IO::Socket::INET correct port';
 $client.print("GET / HTTP/1.0\r\n\r\n");
 my $ret = '';
 while (my $str = $client.recv) {
-  $ret ~= $str;
+    $ret ~= $str;
 }
+
 $client.close;
 ok $ret.match(/ ^^ 'HTTP/1.1 200 OK' $$ /), 'HTTP Status Code: 200';
 ok $ret.match(/ ^^ 'Content-Type: text/plain' $$ /), 'Content-Type';
 ok $ret.match(/ ^^ 'Content-Length: 12' $$ /), 'Content-Length';
 ok $ret.match(/ ^^ 'Hello world!' $$ /), "Content: Hello World!";
-exit 0;
-# vi:syntax=perl6
+
+# vim: expandtab shiftwidth=4

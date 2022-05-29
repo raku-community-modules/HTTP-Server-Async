@@ -1,17 +1,16 @@
-#!/usr/bin/env perl6
+use Test;
 
 use lib 't/lib';
 use starter;
-use Test;
 
 plan 1;
 
 my $s = srv;
 
 $s.handler(sub ($request, $response) {
-  $response.unbuffer;
-  $response.headers<Connection> = 'close';
-  $response.close('Hello');
+    $response.unbuffer;
+    $response.headers<Connection> = 'close';
+    $response.close('Hello');
 });
 
 $s.listen;
@@ -22,9 +21,9 @@ sleep 5;
 $client.print("\r\n");
 my $data;
 while (my $str = $client.recv) {
-  $data ~= $str;
+    $data ~= $str;
 }
 ok $data.match(/'Hello'/), 'Response';
 $client.close;
 
-# vi:syntax=perl6
+# vim: expandtab shiftwidth=4
