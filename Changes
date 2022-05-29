@@ -1,4 +1,6 @@
 Revision history for HTTP-Server-Async
 
 {{$NEXT}}
+
+0.2  2022-05-29T16:50:50+02:00
     - First version in the zef ecosystem

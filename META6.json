@@ -1,5 +1,5 @@
 {
-  "auth": "github:tony-o",
+  "auth": "zef:raku-community-modules",
   "authors": [
     "Tony O'Dell"
   ],
@@ -25,6 +25,9 @@
     "source": "git://github.com/raku-community-modules/HTTP-Server-Async.git"
   },
   "tags": [
+    "HTTP",
+    "SERVER",
+    "ASYNC"
   ],
   "test-depends": [
   ],
